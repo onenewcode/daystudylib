@@ -1,0 +1,10 @@
+﻿[alias]
+#   Cargo 不要运行默认包，而是运行名为 xtask 的包,同时使用release编译模式
+xtask = "run --package xtask --release --"
+debug = "run --package xtask --"
+list-turbo = "xtask list-turbo"
+deploy = "xtask deploy"
+generate = "xtask generate"
+chat = "xtask chat"
+cast = "xtask cast"
+service = "xtask service"
