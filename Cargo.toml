@@ -1,6 +1,10 @@
 [workspace]
-members = [
-    "xtask",
+members = [ "once",
+    "xtask"
+    ]
+path=[
+    "./xtask",
+    "./once"
 ]
 resolver = "2"
 [workspace.dependencies]
@@ -8,4 +12,3 @@ lazy_static = "1.4.0"
 rand = "0.8.5"
 chrono = "0.4.31"
 clap = { version = "4", features = ["derive"] }
-
