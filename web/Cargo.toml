@@ -10,3 +10,7 @@ tokio.workspace=true
 tower.workspace=true
 tracing.workspace=true
 tracing-subscriber.workspace=true
+axum-extra = {version = "0.9.3", features = ["typed-header"] }
+tokio-stream.workspace=true
+headers.workspace=true
+tower-http = { version = "0.5.0", features = ["fs", "trace"] }

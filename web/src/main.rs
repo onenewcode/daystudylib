@@ -1,54 +1,30 @@
 use axum::{
-    extract::{
-        ws::{Message, WebSocket, WebSocketUpgrade},
-        State,
-    },
-    response::{Html, IntoResponse},
+    response::sse::{Event, Sse},
     routing::get,
     Router,
 };
-use futures::{sink::SinkExt, stream::StreamExt};
-use std::{
-    collections::HashSet,
-    sync::{Arc, Mutex},
-};
-use tokio::sync::broadcast;
+use axum_extra::TypedHeader;
+use futures::stream::{self, Stream};
+use std::{convert::Infallible, path::PathBuf, time::Duration};
+use tokio_stream::StreamExt as _;
+use tower_http::{services::ServeDir, trace::TraceLayer};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
-// 共享状态
-// Our shared state
-struct AppState {
-    // 我们需要唯一的用户名。这将跟踪哪些用户名已被占用。
-    // We require unique usernames. This tracks which usernames have been taken.
-    user_set: Mutex<HashSet<String>>,
-    // 用于向所有连接的客户端发送消息的通道。
-    // Channel used to send messages to all connected clients.
-    tx: broadcast::Sender<String>,
-}
 
 #[tokio::main]
 async fn main() {
-    // 启动可观测性
     tracing_subscriber::registry()
         .with(
-            tracing_subscriber::EnvFilter::try_from_default_env()
-                .unwrap_or_else(|_| format!("{}=trace", env!("CARGO_CRATE_NAME")).into()),
+            tracing_subscriber::EnvFilter::try_from_default_env().unwrap_or_else(|_| {
+                format!("{}=debug,tower_http=debug", env!("CARGO_CRATE_NAME")).into()
+            }),
         )
         .with(tracing_subscriber::fmt::layer())
         .init();
 
-    // Set up application state for use with with_state().
-    // 初始化用户表
-    let user_set = Mutex::new(HashSet::new());
-    // 
-    let (tx, _rx) = broadcast::channel(100);
+    // build our application
+    let app = app();
 
-    let app_state = Arc::new(AppState { user_set, tx });
-
-    let app = Router::new()
-        .route("/", get(index))
-        .route("/websocket", get(websocket_handler))
-        .with_state(app_state);
-
+    // run it
     let listener = tokio::net::TcpListener::bind("127.0.0.1:8080")
         .await
         .unwrap();
@@ -56,101 +32,32 @@ async fn main() {
     axum::serve(listener, app).await.unwrap();
 }
 
-async fn websocket_handler(
-    ws: WebSocketUpgrade,
-    State(state): State<Arc<AppState>>,
-) -> impl IntoResponse {
-    ws.on_upgrade(|socket| websocket(socket, state))
+fn app() -> Router {
+    let assets_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("assets");
+    let static_files_service = ServeDir::new(assets_dir).append_index_html_on_directories(true);
+    // build our application with a route
+    Router::new()
+        .fallback_service(static_files_service)
+        .route("/sse", get(sse_handler))
+        .layer(TraceLayer::new_for_http())
 }
 
-// This function deals with a single websocket connection, i.e., a single
-// connected client / user, for which we will spawn two independent tasks (for
-// receiving / sending chat messages).
-async fn websocket(stream: WebSocket, state: Arc<AppState>) {
-    // By splitting, we can send and receive at the same time.
-    let (mut sender, mut receiver) = stream.split();
+async fn sse_handler(
+    TypedHeader(user_agent): TypedHeader<headers::UserAgent>,
+) -> Sse<impl Stream<Item = Result<Event, Infallible>>> {
+    println!("`{}` connected", user_agent.as_str());
 
-    // Username gets set in the receive loop, if it's valid.
-    let mut username = String::new();
-    // Loop until a text message is found.
-    while let Some(Ok(message)) = receiver.next().await {
-        if let Message::Text(name) = message {
-            // If username that is sent by client is not taken, fill username string.
-            check_username(&state, &mut username, &name);
+    // A `Stream` that repeats an event every second
+    //
+    // You can also create streams from tokio channels using the wrappers in
+    // https://docs.rs/tokio-stream
+    let stream = stream::repeat_with(|| Event::default().data("hi!"))
+        .map(Ok)
+        .throttle(Duration::from_secs(1)); //限制流中事件的速率
 
-            // If not empty we want to quit the loop else we want to quit function.
-            if !username.is_empty() {
-                break;
-            } else {
-                // Only send our client that username is taken.
-                let _ = sender
-                    .send(Message::Text(String::from("Username already taken.")))
-                    .await;
-
-                return;
-            }
-        }
-    }
-
-    // We subscribe *before* sending the "joined" message, so that we will also
-    // display it to our client.
-    let mut rx = state.tx.subscribe();
-
-    // Now send the "joined" message to all subscribers.
-    let msg = format!("{username} joined.");
-    tracing::debug!("{msg}");
-    let _ = state.tx.send(msg);
-
-    // Spawn the first task that will receive broadcast messages and send text
-    // messages over the websocket to our client.
-    let mut send_task = tokio::spawn(async move {
-        while let Ok(msg) = rx.recv().await {
-            // In any websocket error, break loop.
-            if sender.send(Message::Text(msg)).await.is_err() {
-                break;
-            }
-        }
-    });
-
-    // Clone things we want to pass (move) to the receiving task.
-    let tx = state.tx.clone();
-    let name = username.clone();
-
-    // Spawn a task that takes messages from the websocket, prepends the user
-    // name, and sends them to all broadcast subscribers.
-    let mut recv_task = tokio::spawn(async move {
-        while let Some(Ok(Message::Text(text))) = receiver.next().await {
-            // Add username before message.
-            let _ = tx.send(format!("{name}: {text}"));
-        }
-    });
-
-    // If any one of the tasks run to completion, we abort the other.
-    tokio::select! {
-        _ = &mut send_task => recv_task.abort(),
-        _ = &mut recv_task => send_task.abort(),
-    };
-
-    // Send "user left" message (similar to "joined" above).
-    let msg = format!("{username} left.");
-    tracing::debug!("{msg}");
-    let _ = state.tx.send(msg);
-
-    // Remove username from map so new clients can take it again.
-    state.user_set.lock().unwrap().remove(&username);
-}
-
-fn check_username(state: &AppState, string: &mut String, name: &str) {
-    let mut user_set = state.user_set.lock().unwrap();
-
-    if !user_set.contains(name) {
-        user_set.insert(name.to_owned());
-
-        string.push_str(name);
-    }
-}
-
-// Include utf-8 file at **compile** time.
-async fn index() -> Html<&'static str> {
-    Html(std::include_str!("../chat.html"))
+    Sse::new(stream).keep_alive(
+        axum::response::sse::KeepAlive::new()
+            .interval(Duration::from_secs(1))//设置 keep-alive 间隔时间为每秒一次
+            .text("keep-alive-text"),
+    )
 }
