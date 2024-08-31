@@ -27,3 +27,14 @@ pub async fn sse_handler(
             .text("keep-alive-text"),
     )
 }
+#[derive(Deserialize, Debug)]
+struct Info {
+    name: String,
+    age: u8,
+}
+async fn json_handler2(Json(info): Json<HashMap<String, String>>) -> String {
+    format!("info: {info:?}")
+}
+async fn json_handler(Json(info): Json<Info>) -> String {
+    format!("info: {info:?}")
+}

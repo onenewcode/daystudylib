@@ -1,9 +1,8 @@
 use axum::{
-    middleware::{self},
     routing::{get, post},
     Router,
 };
-use sse::{ sse_handler};
+use sse::{sse_handler};
 use tower_http::services::ServeDir;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 mod sse;
