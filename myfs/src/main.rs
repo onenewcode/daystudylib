@@ -1,5 +1,5 @@
 use std::fs::File;
-use std::io::{Write, BufReader, BufRead, Error};
+use std::io::{BufRead, BufReader, Error, Write};
 
 fn main() -> Result<(), Error> {
     let path = "lines.txt";

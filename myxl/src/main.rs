@@ -1,6 +1,6 @@
 use std::{marker::PhantomData, slice, sync::Arc, vec};
 
-use serde::{de::Visitor, ser::SerializeStruct,Deserializer, Serializer};
+use serde::{de::Visitor, ser::SerializeStruct, Deserializer, Serializer};
 #[derive(Debug)]
 pub struct Tensor<T> {
     data: Arc<Box<[T]>>,
@@ -109,47 +109,51 @@ impl<T: Clone + serde::ser::Serialize> serde::Serialize for Tensor<T> {
     }
 }
 // 手动实现反序列化,
-impl<'de,T:Deserializer<'de>> serde::Deserialize<'de> for Tensor<T> {
+impl<'de, T: Deserializer<'de>> serde::Deserialize<'de> for Tensor<T> {
     fn deserialize<D>(deserializer: D) -> Result<Tensor<T>, D::Error>
     where
         D: Deserializer<'de>,
     {
         /// 访问者结构体
-        struct TensorVisitor<T>
-        {
+        struct TensorVisitor<T> {
             // 用于标记泛型，不使用
             marker: PhantomData<T>,
         }
 
-        impl<'de, T:Deserializer<'de>> Visitor<'de> for TensorVisitor<T>
-        {
+        impl<'de, T: Deserializer<'de>> Visitor<'de> for TensorVisitor<T> {
             type Value = Tensor<T>;
             fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
                 formatter.write_str("a generic struct with a field of type T")
             }
             fn visit_map<A>(self, mut map: A) -> Result<Self::Value, A::Error>
-                where
-                    A: serde::de::MapAccess<'de>, {
-                        let mut data = Vec::<T>::new();
-                        let mut shape = vec![];
-                        let mut offset = 0;
-                        let mut length = 0;
-                        while let Some(key) = map.next_key::<&str>()? {
-                            match key {
-                                "data" => {
-                                    data = map.next_value()?;
-                                }
-                                "shape" => {}
-                            }
+            where
+                A: serde::de::MapAccess<'de>,
+            {
+                let mut data = Vec::<T>::new();
+                let mut shape = vec![];
+                let mut offset = 0;
+                let mut length = 0;
+                while let Some(key) = map.next_key::<&str>()? {
+                    match key {
+                        "data" => {
+                            data = map.next_value()?;
                         }
-                        Ok(Tensor { data: Arc::new(Box::new([])), shape: vec![1] , offset: 0, length: 0 })
+                        "shape" => {}
+                    }
+                }
+                Ok(Tensor {
+                    data: Arc::new(Box::new([])),
+                    shape: vec![1],
+                    offset: 0,
+                    length: 0,
+                })
             }
         }
 
         deserializer.deserialize_struct(
             "Tensor",
             &["data", "shape", "offset", "length"],
-            TensorVisitor{
+            TensorVisitor {
                 marker: PhantomData,
             },
         )
@@ -165,9 +169,9 @@ mod tests {
 
     #[test]
     fn se() {
-        let t:Tensor<f32>=Tensor::default(&vec![1]);
-        let s=serde_json::to_string(&t).unwrap();
-        println!("{:?}",s);
+        let t: Tensor<f32> = Tensor::default(&vec![1]);
+        let s = serde_json::to_string(&t).unwrap();
+        println!("{:?}", s);
         // let tm=serde_json::from_str::<Tensor<f32>>(&s).unwrap();
         match serde_json::from_str::<Tensor<f32>>(&s) {
             Ok(data) => println!("Deserialized data: {:?}", data),
@@ -176,9 +180,6 @@ mod tests {
             }
         }
         // println!("{:?}",serde_json::to_string(&tm).unwrap());
-        
     }
 }
-fn main() {
-    
-}
+fn main() {}

@@ -1,14 +1,14 @@
-fn app() -> Router {
-    let assets_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("assets");
-    let static_files_service = ServeDir::new(assets_dir).append_index_html_on_directories(true);
-    // build our application with a route
-    Router::new()
-        .fallback_service(static_files_service)
-        .route("/sse", get(sse_handler))
-        .layer(TraceLayer::new_for_http())
-}
-
-async fn sse_handler(
+use axum::{
+    response::sse::{Event, Sse},
+    Router,
+};
+use axum_extra::TypedHeader;
+use futures::stream::{self, Stream};
+use std::{convert::Infallible, path::PathBuf, time::Duration};
+use tokio_stream::StreamExt as _;
+use tower_http::{trace::TraceLayer};
+use tracing_subscriber::{util::SubscriberInitExt};
+pub async fn sse_handler(
     TypedHeader(user_agent): TypedHeader<headers::UserAgent>,
 ) -> Sse<impl Stream<Item = Result<Event, Infallible>>> {
     println!("`{}` connected", user_agent.as_str());
