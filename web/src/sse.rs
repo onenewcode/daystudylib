@@ -1,10 +1,11 @@
 use axum::{
-    response::sse::{Event, Sse},
-    Router,
+    extract::Path, response::sse::{Event, Sse}, Json
 };
+use serde::Deserialize;
 use axum_extra::TypedHeader;
 use futures::stream::{self, Stream};
-use std::{convert::Infallible, path::PathBuf, time::Duration};
+use headers::UserAgent;
+use std::{collections::HashMap, convert::Infallible,time::Duration};
 use tokio_stream::StreamExt as _;
 use tower_http::{trace::TraceLayer};
 use tracing_subscriber::{util::SubscriberInitExt};
@@ -28,23 +29,23 @@ pub async fn sse_handler(
     )
 }
 #[derive(Deserialize, Debug)]
-struct Info {
+pub  struct Info {
     name: String,
     age: u8,
 }
 // 路径参数
 // /path2/:name/:age
-async fn path_handler2(Path((name, age)): Path<(String, i64)>) -> String {
+pub  async fn path_handler2(Path((name, age)): Path<(String, i64)>) -> String {
     format!("name: {name}, age: {age}")
 }
 // 获取请求头
-async fn header_handler(TypedHeader(user_agent): TypedHeader<UserAgent>) -> String {
+pub  async fn header_handler(TypedHeader(user_agent): TypedHeader<UserAgent>) -> String {
     format!("header.user_agent: {user_agent:?}")
 }
 // 请求体
-async fn json_handler2(Json(info): Json<HashMap<String, String>>) -> String {
+pub async fn json_handler2(Json(info): Json<HashMap<String, String>>) -> String {
     format!("info: {info:?}")
 }
-async fn json_handler(Json(info): Json<Info>) -> String {
+pub async fn json_handler(Json(info): Json<Info>) -> String {
     format!("info: {info:?}")
 }
