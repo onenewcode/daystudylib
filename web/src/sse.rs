@@ -32,6 +32,16 @@ struct Info {
     name: String,
     age: u8,
 }
+// 路径参数
+// /path2/:name/:age
+async fn path_handler2(Path((name, age)): Path<(String, i64)>) -> String {
+    format!("name: {name}, age: {age}")
+}
+// 获取请求头
+async fn header_handler(TypedHeader(user_agent): TypedHeader<UserAgent>) -> String {
+    format!("header.user_agent: {user_agent:?}")
+}
+// 请求体
 async fn json_handler2(Json(info): Json<HashMap<String, String>>) -> String {
     format!("info: {info:?}")
 }
