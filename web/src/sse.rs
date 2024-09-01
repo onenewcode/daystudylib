@@ -1,7 +1,7 @@
 use axum::{
-    extract::Path, response::sse::{Event, Sse}, Json
+    extract::Path, http::{Response, StatusCode}, response::{sse::{Event, Sse}, IntoResponse}, Json
 };
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use axum_extra::TypedHeader;
 use futures::stream::{self, Stream};
 use headers::UserAgent;
@@ -28,7 +28,8 @@ pub async fn sse_handler(
             .text("keep-alive-text"),
     )
 }
-#[derive(Deserialize, Debug)]
+// 需要添加序列化，反序列化
+#[derive(Serialize,Deserialize, Debug)]
 pub  struct Info {
     name: String,
     age: u8,
@@ -48,4 +49,9 @@ pub async fn json_handler2(Json(info): Json<HashMap<String, String>>) -> String 
 }
 pub async fn json_handler(Json(info): Json<Info>) -> String {
     format!("info: {info:?}")
+}
+pub async fn create_info(
+    Json(info): Json<Info>,
+) -> impl IntoResponse {
+    (StatusCode::OK, Json(info))
 }

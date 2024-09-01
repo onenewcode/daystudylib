@@ -2,7 +2,7 @@ use axum::{
     routing::{get, post},
     Router,
 };
-use sse::{sse_handler,path_handler2,json_handler};
+use sse::{create_info, json_handler, path_handler2, sse_handler};
 use tower_http::services::ServeDir;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 mod sse;
@@ -35,6 +35,7 @@ fn app() -> Router {
     Router::new()
         .route("/sse", get(sse_handler))
         .route("/path2/:name/:age",get( path_handler2))
+        .route("/json2", post(create_info))
         .route("/json", post(json_handler))
         // .route("/body", post(body_handler))
     
