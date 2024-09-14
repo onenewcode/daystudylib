@@ -33,6 +33,7 @@ fn app() -> Router {
     let static_files_service = ServeDir::new(assets_dir).append_index_html_on_directories(true);
     // build our application with a route
     Router::new()
+    .fallback_service(static_files_service)// 找不到对应的路由经行回调，找不到返回404
         .route("/sse", get(sse_handler))
         .route("/path2/:name/:age",get( path_handler2))
         .route("/json2", post(create_info))
