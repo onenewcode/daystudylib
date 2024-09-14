@@ -1,5 +1,5 @@
 use axum::{
-    extract::Path, http::{Response, StatusCode}, response::{sse::{Event, Sse}, IntoResponse}, Json
+    extract::Path, http::StatusCode, response::{sse::{Event, Sse}, IntoResponse}, Json
 };
 use serde::{Deserialize, Serialize};
 use axum_extra::TypedHeader;
@@ -7,8 +7,6 @@ use futures::stream::{self, Stream};
 use headers::UserAgent;
 use std::{collections::HashMap, convert::Infallible,time::Duration};
 use tokio_stream::StreamExt as _;
-use tower_http::{trace::TraceLayer};
-use tracing_subscriber::{util::SubscriberInitExt};
 pub async fn sse_handler(
     TypedHeader(user_agent): TypedHeader<headers::UserAgent>,
 ) -> Sse<impl Stream<Item = Result<Event, Infallible>>> {

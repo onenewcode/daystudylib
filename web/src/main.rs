@@ -3,8 +3,10 @@ use axum::{
     Router,
 };
 use sse::{create_info, json_handler, path_handler2, sse_handler};
+use stream_file::save_request_body;
 use tower_http::services::ServeDir;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
+mod stream_file;
 mod sse;
 #[tokio::main]
 async fn main() {
@@ -38,6 +40,7 @@ fn app() -> Router {
         .route("/path2/:name/:age",get( path_handler2))
         .route("/json2", post(create_info))
         .route("/json", post(json_handler))
+        .route("/file/:file_name", post(save_request_body))  // 添加文件上传文件例子
         // .route("/body", post(body_handler))
-    
+
 }
