@@ -339,13 +339,6 @@ dependencies = [
 
 [[package]]
 name = "criterion"
-version = "0.1.0"
-dependencies = [
- "criterion 0.5.1",
-]
-
-[[package]]
-name = "criterion"
 version = "0.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f2b12d017a929603d80db1831cd3a24082f8137ce19c69e6447f54f5fc8d692f"
@@ -884,6 +877,13 @@ dependencies = [
  "mime",
  "spin",
  "version_check",
+]
+
+[[package]]
+name = "my_criterion"
+version = "0.1.0"
+dependencies = [
+ "criterion",
 ]
 
 [[package]]
