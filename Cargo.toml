@@ -1,5 +1,5 @@
 [workspace]
-members = [ "myfs", "myxl", "once", "web",
+members = [ "criterion", "myfs", "myxl", "once", "web",
     "xtask"
     ]
 path=[
