@@ -636,3 +636,6 @@ service = "xtask service"
 XTask提供了一种强大的、灵活的方式来管理Rust项目中的构建和自动化任务。它不仅可以简化项目维护，还可以提高团队协作效率，确保项目的一致性和稳定性。通过将常见的构建步骤封装到XTask中，开发者可以专注于业务逻辑，而不用担心构建过程中的细节问题。
 
 # pointer 解释rust中的指针
+
+# 基准测试 Criterion
+运行命令cargo bench --bench my_benchmark 
