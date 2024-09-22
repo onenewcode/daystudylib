@@ -1,25 +1,38 @@
 use axum::{
     extract::Path, http::StatusCode, response::{sse::{Event, Sse}, IntoResponse}, Json
 };
+use tokio::sync::mpsc;
 use serde::{Deserialize, Serialize};
 use axum_extra::TypedHeader;
 use futures::stream::{self, Stream};
 use headers::UserAgent;
 use std::{collections::HashMap, convert::Infallible,time::Duration};
-use tokio_stream::StreamExt as _;
+use tokio_stream::{wrappers::UnboundedReceiverStream, StreamExt as _};
 pub async fn sse_handler(
     TypedHeader(user_agent): TypedHeader<headers::UserAgent>,
 ) -> Sse<impl Stream<Item = Result<Event, Infallible>>> {
     println!("`{}` connected", user_agent.as_str());
+    // 构建自己的流，用管道传输
+    
+      // 创建一个无界管道,不能使用tokio的管道，因为它是异步的
 
-    // A `Stream` that repeats an event every second
-    //
-    // You can also create streams from tokio channels using the wrappers in
-    // https://docs.rs/tokio-stream
-    let stream = stream::repeat_with(|| Event::default().data("hi!"))
-        .map(Ok)
-        .throttle(Duration::from_secs(1));
+      let (tx, mut rx) = mpsc::unbounded_channel();
 
+      // 创建一个独立任务任务来发送消息
+      // 同步代码块，不能运行异步线程
+      tokio::spawn(async move {
+          let mut i = 0;
+          loop {
+              tx.send(format!("Message {}", i)).unwrap();
+              i += 1;
+              tokio::time::sleep(Duration::from_secs(1)).await;
+          }
+      });
+      // 生成一个流，用于向客户端传输
+      let stream = UnboundedReceiverStream::new(rx)
+      .map(|data| Event::default().data(data))
+      .map(Ok)
+      .throttle(Duration::from_secs(1));
     Sse::new(stream).keep_alive(
         axum::response::sse::KeepAlive::new()
             .interval(Duration::from_secs(1))
