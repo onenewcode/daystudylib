@@ -639,3 +639,15 @@ XTask提供了一种强大的、灵活的方式来管理Rust项目中的构建�
 
 # 基准测试 Criterion
 运行命令cargo bench --bench my_benchmark 
+
+目录结构
+```shell
+│  Cargo.toml
+│
+├─benches
+│      my_benchmark.rs
+│
+└─src
+        lib.rs
+        main.rs
+``` 
