@@ -51,10 +51,12 @@ pub  async fn path_handler2(Path((name, age)): Path<(String, i64)>) -> String {
     format!("name: {name}, age: {age}")
 }
 // 获取请求头
+
 pub  async fn header_handler(TypedHeader(user_agent): TypedHeader<UserAgent>) -> String {
     format!("header.user_agent: {user_agent:?}")
 }
 // 请求体
+
 pub async fn json_handler2(Json(info): Json<HashMap<String, String>>) -> String {
     format!("info: {info:?}")
 }

@@ -1,13 +1,18 @@
 use axum::{
-    routing::{get, post},
-    Router,
+    extract::DefaultBodyLimit, routing::{get, post}, Router
 };
 use sse::{create_info, json_handler, path_handler2, sse_handler};
+use tower_http::limit::RequestBodyLimitLayer;
 use stream_file::save_request_body;
 use tower_http::services::ServeDir;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
+use multipart_form::show_form;
+use multipart_form::accept_form;
 mod stream_file;
 mod sse;
+mod multipart_form;
+
+
 #[tokio::main]
 async fn main() {
     tracing_subscriber::registry()
@@ -41,6 +46,11 @@ fn app() -> Router {
         .route("/json2", post(create_info))
         .route("/json", post(json_handler))
         .route("/file/:file_name", post(save_request_body))  // 添加文件上传文件例子
+        .route("/multipart", get(show_form).post(accept_form))
+        .layer(DefaultBodyLimit::disable())// 禁用默认请求体大小限制
+        .layer(RequestBodyLimitLayer::new(
+            250 * 1024 * 1024, /* 250mb */
+        ))// 添加一个请求体大小限制的中间件，设置请求体的最大大小为250MB
+        .layer(tower_http::trace::TraceLayer::new_for_http()) //添加一个跟踪中间件
         // .route("/body", post(body_handler))
-
 }

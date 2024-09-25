@@ -4,16 +4,21 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-futures.workspace=true
-tokio.workspace=true
-tower.workspace=true
-tracing.workspace=true
-tracing-subscriber.workspace=true
+lazy_static = "1.4.0"
+rand = "0.8.5"
+chrono = "0.4.31"
+clap = { version = "4", features = ["derive"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+futures = "0.3"
+tokio = { version = "1", features = ["full"] }
+tower = { version = "0.4", features = ["util"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+tokio-stream = "0.1"
+headers = "0.4"
 axum-extra = {version = "0.9.3", features = ["typed-header"] }
 axum = { version = "0.7.5", features = ["ws","multipart"] }
-tokio-stream.workspace=true
-headers.workspace=true
-serde = { version = "1", features = ["derive"] }
 tokio-util = { version = "0.7", features = ["io"] }
 sonic-rs = "0.3.12"
-tower-http = { version = "0.5.0", features = ["fs", "trace"] }
+tower-http = { version = "0.6.1", features = ["fs", "trace","limit"] }

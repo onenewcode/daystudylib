@@ -2,9 +2,7 @@ use axum::{
     body::Bytes,
     extract::{Path, Request},
     http::StatusCode,
-    response::{Html, Redirect},
-    routing::{get, post},
-    BoxError, Router,
+    BoxError,
 };
 use futures::{Stream, TryStreamExt};
 use std::io;
