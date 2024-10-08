@@ -12,6 +12,7 @@ mod stream_file;
 mod sse;
 mod multipart_form;
 mod templates;
+// mod validator;
 use templates::handler_home;
 
 #[tokio::main]
