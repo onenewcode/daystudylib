@@ -11,7 +11,8 @@ use multipart_form::accept_form;
 mod stream_file;
 mod sse;
 mod multipart_form;
-
+mod templates;
+use templates::handler_home;
 
 #[tokio::main]
 async fn main() {
@@ -47,6 +48,7 @@ fn app() -> Router {
         .route("/json", post(json_handler))
         .route("/file/:file_name", post(save_request_body))  // 添加文件上传文件例子
         .route("/multipart", get(show_form).post(accept_form))
+        .route("/home", get(handler_home))
         .layer(DefaultBodyLimit::disable())// 禁用默认请求体大小限制
         .layer(RequestBodyLimitLayer::new(
             250 * 1024 * 1024, /* 250mb */

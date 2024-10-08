@@ -900,6 +900,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "minijinja"
+version = "2.3.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1028b628753a7e1a88fc59c9ba4b02ecc3bc0bd3c7af23df667bc28df9b3310e"
+dependencies = [
+ "serde",
+]
+
+[[package]]
 name = "miniz_oxide"
 version = "0.7.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -946,6 +955,10 @@ dependencies = [
 
 [[package]]
 name = "myfs"
+version = "0.1.0"
+
+[[package]]
+name = "mytest"
 version = "0.1.0"
 
 [[package]]
@@ -1839,6 +1852,7 @@ dependencies = [
  "futures",
  "headers",
  "lazy_static",
+ "minijinja",
  "rand",
  "serde",
  "serde_json",

@@ -7,8 +7,8 @@
         {
             "type": "lldb",
             "request": "launch",
-            "name": "Debug",
-            "program": "${workspaceFolder}/<executable file>",
+            "name": "mytest",
+            "program": "${workspaceFolder}/mytest/src/main.rs",
             "args": [],
             "cwd": "${workspaceFolder}"
         }
