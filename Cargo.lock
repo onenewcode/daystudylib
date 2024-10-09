@@ -389,7 +389,7 @@ dependencies = [
  "once_cell",
  "oorandom",
  "plotters",
- "rayon",
+ "rayon 1.10.0",
  "regex",
  "serde",
  "serde_derive",
@@ -1235,6 +1235,10 @@ checksum = "ec0be4795e2f6a28069bec0b5ff3e2ac9bafc99e6a9a7dc3547996c5c816922c"
 dependencies = [
  "getrandom",
 ]
+
+[[package]]
+name = "rayon"
+version = "0.1.0"
 
 [[package]]
 name = "rayon"
