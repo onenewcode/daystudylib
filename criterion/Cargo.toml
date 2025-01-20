@@ -1,10 +1,27 @@
 [package]
-name = "my_criterion"
+name = "zcriterion"
 version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-criterion = { version = "0.5"}
-[[bench]]
-name = "my_benchmark"
-harness = false
+criterion = "0.5"
+half = { version = "2.3.1" }
+rand = "0.8"
+# [[bench]]
+# name = "fmadd_ps"
+# harness = false
+
+[lib]
+# bench = false
+[profile.bench]
+opt-level = 3
+debug = false
+# split-debuginfo = '...'  # 平台指定。
+strip = "debuginfo" # 从二进制文件中去除符号或调试信息
+debug-assertions = false
+overflow-checks = false
+lto = false
+panic = 'unwind'
+incremental = false
+codegen-units = 16
+rpath = false

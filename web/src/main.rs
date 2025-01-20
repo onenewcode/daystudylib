@@ -1,17 +1,19 @@
-use std::net::SocketAddr;
 use axum::{
-    extract::DefaultBodyLimit, routing::{get, post}, Router
+    extract::DefaultBodyLimit,
+    routing::{get, post},
+    Router,
 };
+use multipart_form::accept_form;
+use multipart_form::show_form;
 use sse::{create_info, json_handler, path_handler2, sse_handler};
-use tower_http::limit::RequestBodyLimitLayer;
+use std::net::SocketAddr;
 use stream_file::save_request_body;
+use tower_http::limit::RequestBodyLimitLayer;
 use tower_http::services::ServeDir;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
-use multipart_form::show_form;
-use multipart_form::accept_form;
-mod stream_file;
-mod sse;
 mod multipart_form;
+mod sse;
+mod stream_file;
 mod templates;
 // mod validator;
 use templates::handler_home;
@@ -43,22 +45,21 @@ fn app() -> Router {
     let static_files_service = ServeDir::new(assets_dir).append_index_html_on_directories(true);
     // build our application with a route
     Router::new()
-    .fallback_service(static_files_service)// 找不到对应的路由经行回调，找不到返回404
+        .fallback_service(static_files_service) // 找不到对应的路由经行回调，找不到返回404
         .route("/sse", get(sse_handler))
-        .route("/path2/:name/:age",get( path_handler2))
+        .route("/path2/:name/:age", get(path_handler2))
         .route("/json2", post(create_info))
         .route("/json", post(json_handler))
-        .route("/file/:file_name", post(save_request_body))  // 添加文件上传文件例子
+        .route("/file/:file_name", post(save_request_body)) // 添加文件上传文件例子
         .route("/multipart", get(show_form).post(accept_form))
         .route("/home", get(handler_home))
-        .layer(DefaultBodyLimit::disable())// 禁用默认请求体大小限制
+        .layer(DefaultBodyLimit::disable()) // 禁用默认请求体大小限制
         .layer(RequestBodyLimitLayer::new(
             250 * 1024 * 1024, /* 250mb */
-        ))// 添加一个请求体大小限制的中间件，设置请求体的最大大小为250MB
+        )) // 添加一个请求体大小限制的中间件，设置请求体的最大大小为250MB
         .layer(tower_http::trace::TraceLayer::new_for_http()) //添加一个跟踪中间件
-        // .route("/body", post(body_handler))
+                                                              // .route("/body", post(body_handler))
 }
-
 
 #[cfg(test)]
 mod tests {

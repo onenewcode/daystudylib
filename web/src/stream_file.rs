@@ -10,7 +10,7 @@ use tokio::{fs::File, io::BufWriter};
 use tokio_util::io::StreamReader;
 
 const UPLOADS_DIRECTORY: &str = "uploads";
-pub  async fn save_request_body(
+pub async fn save_request_body(
     Path(file_name): Path<String>,
     request: Request,
 ) -> Result<(), (StatusCode, String)> {
@@ -18,7 +18,7 @@ pub  async fn save_request_body(
 }
 
 // Save a `Stream` to a file
-async  fn stream_to_file<S, E>(path: &str, stream: S) -> Result<(), (StatusCode, String)>
+async fn stream_to_file<S, E>(path: &str, stream: S) -> Result<(), (StatusCode, String)>
 where
     S: Stream<Item = Result<Bytes, E>>,
     E: Into<BoxError>,
