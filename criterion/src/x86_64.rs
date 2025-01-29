@@ -13,14 +13,22 @@ pub unsafe fn mul_sum_i8_pairs_float(x: __m256i, y: __m256i) -> __m256 {
 
 #[inline]
 pub unsafe fn mul_sum_us8_pairs_float(ax: __m256i, sy: __m256i) -> __m256 {
-    let axl = _mm256_castsi256_si128(ax);
-    let axh = _mm256_extractf128_si256(ax, 1);
-    let syl = _mm256_castsi256_si128(sy);
-    let syh = _mm256_extractf128_si256(sy, 1);
-    // Perform multiplication and create 16-bit values
-    let dotl = _mm_maddubs_epi16(axl, syl);
-    let doth = _mm_maddubs_epi16(axh, syh);
-    sum_i16_pairs_float(doth, dotl)
+    if is_x86_feature_detected!("avx512vl")||is_x86_feature_detected!("avxvnni"){
+        let zero = _mm256_setzero_si256();
+        let  summed_pairs = _mm256_dpbusd_epi32(zero, ax, sy);
+        _mm256_cvtepi32_ps(summed_pairs)
+    }else{
+ // avx
+ let axl = _mm256_castsi256_si128(ax);
+ let axh = _mm256_extractf128_si256(ax, 1);
+ let syl = _mm256_castsi256_si128(sy);
+ let syh = _mm256_extractf128_si256(sy, 1);
+ // Perform multiplication and create 16-bit values
+ let dotl = _mm_maddubs_epi16(axl, syl);
+ let doth = _mm_maddubs_epi16(axh, syh);
+ sum_i16_pairs_float(doth, dotl)
+    }
+   
 }
 
 #[inline]
