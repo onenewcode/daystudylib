@@ -5,8 +5,8 @@
 # asm
 >https://github.com/pacak/cargo-show-asm
 
-cargo asm -p zcriterion --lib  mm256_fmadd_ps_test -c=20   --simplify --intel --reduce-labels 
-
+>cargo asm -p zcriterion --lib  mm256_fmadd_ps_test -c=20   --simplify --intel --reduce-labels 
+>cargo flamegraph --unit-test zcriterion  -- test::test_vec_dot_q8_simdx86
 **linux**
 >objdump -d --disassemble=ggml_vec_dot_q8_0_q8_0 ./libggml-cpu.so
 

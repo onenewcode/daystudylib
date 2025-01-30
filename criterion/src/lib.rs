@@ -135,23 +135,23 @@ pub fn vec_dot_q8_0_q8_0_avx2(abs: &[BlockQ8_0], bbs: &[BlockQ8_0]) -> f32 {
 pub fn vec_dot_q8_simdx86(n: usize, x: &[BlockQ8_0], y: &[BlockQ8_0]) -> f32 {
     // if is_x86_feature_detected!("avx2") {
     unsafe {
-        use std::arch::x86_64;
+        use std::arch::x86_64::*;
         // Initialize accumulator with zeros
-        let mut acc = x86_64::_mm256_setzero_ps();
+        let mut acc = _mm256_setzero_ps();
         // Main loop
         (0..n / 32).into_iter().for_each(|i| {
             //  转换成查表，提升不明显
-            let d = x86_64::_mm256_set1_ps(x[i].d.to_f32() * (y[i].d.to_f32()));
+            let d = _mm256_set1_ps(x[i].d.to_f32() * (y[i].d.to_f32()));
             // let d = x86_64::_mm256_setzero_ps();
 
-            let qx = x86_64::_mm256_loadu_si256(x[i].qs.as_ptr() as *const x86_64::__m256i);
-            let qy = x86_64::_mm256_loadu_si256(y[i].qs.as_ptr() as *const x86_64::__m256i);
+            let qx = _mm256_loadu_si256(x[i].qs.as_ptr() as *const __m256i);
+            let qy = _mm256_loadu_si256(y[i].qs.as_ptr() as *const __m256i);
 
             let q = crate::x86_64::mul_sum_i8_pairs_float(qx, qy);
 
             // TODO 过慢 cpu Intel(R) Xeon(R) Gold 6330 CPU @ 2.00GHz rust 1.86.0-nightly
             // // Multiply q with scale and accumulate
-            acc = x86_64::_mm256_fmadd_ps(d, q, acc);
+            acc = _mm256_fmadd_ps(d, q, acc);
         });
         crate::x86_64::hsum_float_8(acc)
     }

@@ -1,4 +1,24 @@
+use consts::{GGML_F16_ARR, GGML_F16_EPR, GGML_F16_STEP, GGML_F32_ARR};
+use core::f32;
+use half::f16;
 use std::arch::x86_64::*;
+#[repr(C, packed)]
+#[derive(Debug, Clone)]
+pub struct BlockQ8_0 {
+    d: f16,       // delta
+    qs: [i8; 32], // quants
+}
+
+// 当目标支持 AVX2 时设置这些常量
+// #[cfg(target_feature = "avx512f")]
+mod consts {
+    pub(crate) const GGML_F16_STEP: usize = 64;
+    pub(crate) const GGML_F16_EPR: usize = 16;
+    pub(crate) const GGML_F32_STEP: usize = 64;
+    pub(crate) const GGML_F32_EPR: usize = 16;
+    pub(crate) const GGML_F32_ARR: usize = GGML_F32_STEP / GGML_F32_EPR;
+    pub(crate) const GGML_F16_ARR: usize = GGML_F16_STEP / GGML_F16_EPR;
+}
 
 /// TODO: Adding AVX-VNNI support so that we can use `_mm256_dpbssd_epi32`
 #[inline]
@@ -58,3 +78,82 @@ pub unsafe fn bytes_from_nibbles_32(rsi: *const u8) -> __m256i {
     let low_mask = _mm256_set1_epi8(0xF);
     _mm256_and_si256(low_mask, bytes)
 }
+pub fn vec_dot_q8(n: usize, x: &[BlockQ8_0], y: &[BlockQ8_0]) -> f32 {
+    // if is_x86_feature_detected!("avx2") {
+    unsafe {
+        // Initialize accumulator with zeros
+        let mut acc = _mm256_setzero_ps();
+        // Main loop
+        (0..n / 32).into_iter().for_each(|i| {
+            //  转换成查表，提升不明显
+            let d = _mm256_set1_ps(x[i].d.to_f32() * (y[i].d.to_f32()));
+            // let d = x86_64::_mm256_setzero_ps();
+
+            let qx = _mm256_loadu_si256(x[i].qs.as_ptr() as *const __m256i);
+            let qy = _mm256_loadu_si256(y[i].qs.as_ptr() as *const __m256i);
+
+            let q = crate::x86_64::mul_sum_i8_pairs_float(qx, qy);
+
+            // TODO 过慢 cpu Intel(R) Xeon(R) Gold 6330 CPU @ 2.00GHz rust 1.86.0-nightly
+            // // Multiply q with scale and accumulate
+            acc = _mm256_fmadd_ps(d, q, acc);
+        });
+        crate::x86_64::hsum_float_8(acc)
+    }
+}
+pub unsafe fn vec_dot_f16(x: &[f16], y: &[f16]) -> f32 {
+    let mut sumf: f32 = 0.0;
+    let n = x.len();
+
+    let np = n & !(GGML_F16_STEP - 1);
+
+    let mut sum: [__m512; GGML_F16_ARR] = [_mm512_setzero_ps(); GGML_F16_ARR];
+    let mut ax: [__m512; GGML_F16_ARR] = [_mm512_setzero_ps(); GGML_F16_ARR];
+    let mut ay: [__m512; GGML_F16_ARR] = [_mm512_setzero_ps(); GGML_F16_ARR];
+
+    for i in (0..np).step_by(GGML_F16_STEP) {
+        for j in 0..GGML_F16_ARR {
+            let idx = i + j * GGML_F16_EPR;
+
+            ax[j] = ggml_f32_cx16_load(x.as_ptr().add(i + j * GGML_F16_EPR) as *const u8);
+            ay[j] = ggml_f32_cx16_load(y.as_ptr().add(i + j * GGML_F16_EPR) as *const u8);
+
+            sum[j] = _mm512_fmadd_ps(ax[j], ay[j], sum[j]);
+        }
+    }
+
+    ggml_f32x16_reduce(sumf, &mut sum);
+    // for (i = np; i < n; ++i) {
+    //     sumf += (ggml_float)(x[i].to_f32()*y[i].to_f32());
+    // }
+
+    sumf
+}
+
+#[target_feature(enable = "avx512f")]
+unsafe fn ggml_f32x16_reduce(mut res: f32, x: &mut [__m512; GGML_F32_ARR]) {
+    let mut offset = GGML_F32_ARR >> 1;
+    // 第一轮归约
+    for i in 0..offset {
+        x[i] = _mm512_add_ps(x[i], x[offset + i]);
+    }
+
+    offset >>= 1;
+
+    // 后续归约步骤
+    while offset > 0 {
+        for i in 0..offset {
+            x[i] = _mm512_add_ps(x[i], x[offset + i]);
+        }
+        offset >>= 1;
+    }
+
+    // 最终归约
+    res += _mm512_reduce_add_ps(x[0]);
+}
+#[inline]
+unsafe fn ggml_f32_cx16_load(x: *const u8) -> __m512 {
+    _mm512_cvtph_ps(_mm256_loadu_si256(x as *const __m256i))
+}
+// #define GGML_F32Cx16_LOAD(x)     _mm512_cvtph_ps(_mm256_loadu_si256((const __m256i *)(x)))
+// #define GGML_F32Cx16_STORE(x, y) _mm256_storeu_si256((__m256i *)(x), _mm512_cvtps_ph(y, 0))
