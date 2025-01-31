@@ -19,7 +19,7 @@ pub struct BlockQ8_0 {
 }
 
 #[link(name = "ggml")]
-extern "C" {
+unsafe extern "C" {
     fn ggml_vec_dot_q8_0_q8_0(
         n: i32,               // number of elements
         s: *mut f32,          // result
@@ -30,12 +30,38 @@ extern "C" {
         by: usize,            // not used?
         nrc: i32,             // always 1?
     );
+    unsafe fn ggml_vec_dot_f16(
+        n: i32,
+        s: *mut f32, // restrict 指针
+        bs: usize,
+        x: *const f16, // restrict 指针
+        bx: usize,
+        y: *const f16, // restrict 指针
+        by: usize,
+        nrc: i32,
+    ) -> f32;
 }
 
 pub fn vec_dot_q8_ggml(n: usize, x: &[BlockQ8_0], y: &[BlockQ8_0]) -> f32 {
     let mut result: f32 = 0.0;
     unsafe {
         ggml_vec_dot_q8_0_q8_0(
+            n as i32,
+            &mut result as *mut f32,
+            0,
+            x.as_ptr(),
+            0,
+            y.as_ptr(),
+            0,
+            1,
+        );
+    }
+    result
+}
+pub fn vec_dot_f16_ggml(n: usize, x: &[f16], y: &[f16]) -> f32 {
+    let mut result: f32 = 0.0;
+    unsafe {
+        ggml_vec_dot_f16(
             n as i32,
             &mut result as *mut f32,
             0,
@@ -338,7 +364,10 @@ pub fn vec_dot_q8_neon_unrolled_vfma(n: usize, a: &[BlockQ8_0], b: &[BlockQ8_0])
 
 #[cfg(test)]
 mod tests {
+    use crate::x86_64::vec_dot_f16;
+
     use super::*;
+    use half::vec;
     use rand::{thread_rng, Rng};
     extern crate test;
     use test::Bencher;
@@ -360,6 +389,18 @@ mod tests {
         }
     }
 
+    fn gen_rand_block_f16(n: usize) -> Vec<f16> {
+        let mut rng = thread_rng();
+        let d: f32 = rng.gen_range(0.0..2.0);
+        (0..n)
+            .map(|_| {
+                // 生成一个介于 0.0 到 1.0 之间的 f32 随机数
+                let random_f32: f32 = rng.gen_range(0.0..1.0);
+                // 将 f32 转换为 f16
+                f16::from_f32(random_f32)
+            })
+            .collect()
+    }
     fn gen_rand_block_q8_0_vec(n: usize) -> Vec<BlockQ8_0> {
         let mut v: Vec<BlockQ8_0> = Vec::with_capacity(n);
         for _ in 0..n {
@@ -367,7 +408,15 @@ mod tests {
         }
         v
     }
-
+    #[test]
+    fn test_vec_dot_f16() {
+        let count = TEST_BLOCKS * 32;
+        let v1 = gen_rand_block_f16(count);
+        let v2 = gen_rand_block_f16(count);
+        let naive_result = vec_dot_f16_ggml(count, &v1, &v2);
+        let result = vec_dot_f16(&v1, &v2);
+        assert!((result - naive_result).abs() < 1e-2);
+    }
     // #[test]
     // fn test_vec_dot_q8_0_q8_0_avx2() {
     //     let v1 = gen_rand_block_q8_0_vec(4);
@@ -423,5 +472,19 @@ mod tests {
         let v1 = gen_rand_block_q8_0_vec(TEST_BLOCKS);
         let v2 = gen_rand_block_q8_0_vec(TEST_BLOCKS);
         b.iter(|| vec_dot_q8_simdx86(TEST_BLOCKS, &v1, &v2));
+    }
+    #[bench]
+    fn bench_vec_dot_f16_ggml(b: &mut Bencher) {
+        let count = TEST_BLOCKS * 32;
+        let v1 = gen_rand_block_f16(count);
+        let v2 = gen_rand_block_f16(count);
+        b.iter(|| vec_dot_f16_ggml(count, &v1, &v2));
+    }
+    #[bench]
+    fn bench_vec_dot_f16(b: &mut Bencher) {
+        let count = TEST_BLOCKS * 32;
+        let v1 = gen_rand_block_f16(count);
+        let v2 = gen_rand_block_f16(count);
+        b.iter(|| vec_dot_f16(&v1, &v2));
     }
 }

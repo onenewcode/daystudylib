@@ -101,33 +101,35 @@ pub fn vec_dot_q8(n: usize, x: &[BlockQ8_0], y: &[BlockQ8_0]) -> f32 {
         crate::x86_64::hsum_float_8(acc)
     }
 }
-pub unsafe fn vec_dot_f16(x: &[f16], y: &[f16]) -> f32 {
-    let mut sumf: f32 = 0.0;
-    let n = x.len();
+pub fn vec_dot_f16(x: &[f16], y: &[f16]) -> f32 {
+    unsafe {
+        let mut sumf: f32 = 0.0;
+        let n = x.len();
 
-    let np = n & !(GGML_F16_STEP - 1);
+        let np = n & !(GGML_F16_STEP - 1);
 
-    let mut sum: [__m512; GGML_F16_ARR] = [_mm512_setzero_ps(); GGML_F16_ARR];
-    let mut ax: [__m512; GGML_F16_ARR] = [_mm512_setzero_ps(); GGML_F16_ARR];
-    let mut ay: [__m512; GGML_F16_ARR] = [_mm512_setzero_ps(); GGML_F16_ARR];
+        let mut sum: [__m512; GGML_F16_ARR] = [_mm512_setzero_ps(); GGML_F16_ARR];
+        let mut ax: [__m512; GGML_F16_ARR] = [_mm512_setzero_ps(); GGML_F16_ARR];
+        let mut ay: [__m512; GGML_F16_ARR] = [_mm512_setzero_ps(); GGML_F16_ARR];
 
-    for i in (0..np).step_by(GGML_F16_STEP) {
-        for j in 0..GGML_F16_ARR {
-            let idx = i + j * GGML_F16_EPR;
+        for i in (0..np).step_by(GGML_F16_STEP) {
+            for j in 0..GGML_F16_ARR {
+                let idx = i + j * GGML_F16_EPR;
 
-            ax[j] = ggml_f32_cx16_load(x.as_ptr().add(i + j * GGML_F16_EPR) as *const u8);
-            ay[j] = ggml_f32_cx16_load(y.as_ptr().add(i + j * GGML_F16_EPR) as *const u8);
+                ax[j] = ggml_f32_cx16_load(x.as_ptr().add(idx) as *const u8);
+                ay[j] = ggml_f32_cx16_load(y.as_ptr().add(idx) as *const u8);
 
-            sum[j] = _mm512_fmadd_ps(ax[j], ay[j], sum[j]);
+                sum[j] = _mm512_fmadd_ps(ax[j], ay[j], sum[j]);
+            }
         }
+
+        ggml_f32x16_reduce(sumf, &mut sum);
+        // 处理不能除尽的元素
+        (np..n).into_iter().for_each(|i| {
+            sumf += x[i].to_f32() * y[i].to_f32();
+        });
+        sumf
     }
-
-    ggml_f32x16_reduce(sumf, &mut sum);
-    // for (i = np; i < n; ++i) {
-    //     sumf += (ggml_float)(x[i].to_f32()*y[i].to_f32());
-    // }
-
-    sumf
 }
 
 #[target_feature(enable = "avx512f")]
