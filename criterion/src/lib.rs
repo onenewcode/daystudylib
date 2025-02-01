@@ -416,8 +416,8 @@ mod tests {
         let v2 = gen_rand_block_q8_0_vec(4);
 
         let naive_result = vec_dot_q8_naive(128, &v1, &v2);
-        // let result = vec_dot_q8_ggml(128, &v1, &v2);
-        // assert!((result - naive_result).abs() < 1e-2);
+        let result = vec_dot_q8_ggml(128, &v1, &v2);
+        assert!((result - naive_result).abs() < 1e-2);
         let result = vec_dot_q8(&v1, &v2);
         assert!((result - naive_result).abs() < 1e-2);
         // let result = vec_dot_q8_neon(64, &v1, &v2);

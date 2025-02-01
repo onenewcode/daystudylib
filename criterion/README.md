@@ -12,270 +12,273 @@
 >objdump -d --disassemble=ggml_vec_dot_q8_0_q8_0 ./libggml-cpu.so
 
 > objdump -d -S --disassemble=ggml_vec_dot_q8_0_q8_0 --no-show-raw-insn ./libggml-cpu.so
+
+>cmake -B build -DCMAKE_BUILD_TYPE=Debug -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ && cmake --build build 
+>cmake -B build -DCMAKE_BUILD_TYPE=Debug  && cmake --build build 
 ```asm
 void ggml_vec_dot_q8_0_q8_0(int n, float * restrict s, size_t bs, const void * restrict vx, size_t bx, const void * restrict vy, size_t by, int nrc) {
-   657c2:       endbr64 
-   657c6:       lea    0x8(%rsp),%r10
-   657cb:       and    $0xffffffffffffffe0,%rsp
-   657cf:       pushq  -0x8(%r10)
-   657d3:       push   %rbp
-   657d4:       mov    %rsp,%rbp
-   657d7:       push   %r10
-   657d9:       sub    $0x188,%rsp
-   657e0:       mov    %edi,-0x154(%rbp)
-   657e6:       mov    %rsi,-0x160(%rbp)
-   657ed:       mov    %rdx,-0x168(%rbp)
-   657f4:       mov    %rcx,-0x170(%rbp)
-   657fb:       mov    %r8,-0x178(%rbp)
-   65802:       mov    %r9,-0x180(%rbp)
+   657d0:       endbr64 
+   657d4:       lea    0x8(%rsp),%r10
+   657d9:       and    $0xffffffffffffffe0,%rsp
+   657dd:       pushq  -0x8(%r10)
+   657e1:       push   %rbp
+   657e2:       mov    %rsp,%rbp
+   657e5:       push   %r10
+   657e7:       sub    $0x188,%rsp
+   657ee:       mov    %edi,-0x154(%rbp)
+   657f4:       mov    %rsi,-0x160(%rbp)
+   657fb:       mov    %rdx,-0x168(%rbp)
+   65802:       mov    %rcx,-0x170(%rbp)
+   65809:       mov    %r8,-0x178(%rbp)
+   65810:       mov    %r9,-0x180(%rbp)
     const int qk = QK8_0;
-   65809:       movl   $0x20,-0x13c(%rbp)
+   65817:       movl   $0x20,-0x13c(%rbp)
     const int nb = n / qk;
-   65813:       mov    -0x154(%rbp),%eax
-   65819:       cltd   
-   6581a:       idivl  -0x13c(%rbp)
-   65820:       mov    %eax,-0x138(%rbp)
+   65821:       mov    -0x154(%rbp),%eax
+   65827:       cltd   
+   65828:       idivl  -0x13c(%rbp)
+   6582e:       mov    %eax,-0x138(%rbp)
 
     assert(n % qk == 0);
-   65826:       mov    -0x154(%rbp),%eax
-   6582c:       cltd   
-   6582d:       idivl  -0x13c(%rbp)
-   65833:       mov    %edx,%eax
-   65835:       test   %eax,%eax
-   65837:       je     65858 <ggml_vec_dot_q8_0_q8_0+0x96>
-   65839:       lea    0x6e490(%rip),%rcx        # d3cd0 <__PRETTY_FUNCTION__.32367>
-   65840:       mov    $0xd13,%edx
-   65845:       lea    0x6dd84(%rip),%rsi        # d35d0 <GGML_TENSOR_SIZE+0xf0>
-   6584c:       lea    0x6de0d(%rip),%rdi        # d3660 <kvalues_iq4nl+0x10>
-   65853:       callq  ff50 <__assert_fail@plt>
+   65834:       mov    -0x154(%rbp),%eax
+   6583a:       cltd   
+   6583b:       idivl  -0x13c(%rbp)
+   65841:       mov    %edx,%eax
+   65843:       test   %eax,%eax
+   65845:       je     65866 <ggml_vec_dot_q8_0_q8_0+0x96>
+   65847:       lea    0x6e482(%rip),%rcx        # d3cd0 <__PRETTY_FUNCTION__.32367>
+   6584e:       mov    $0xd13,%edx
+   65853:       lea    0x6dd76(%rip),%rsi        # d35d0 <GGML_TENSOR_SIZE+0xf0>
+   6585a:       lea    0x6ddff(%rip),%rdi        # d3660 <kvalues_iq4nl+0x10>
+   65861:       callq  ff50 <__assert_fail@plt>
 #if defined(__ARM_FEATURE_MATMUL_INT8)
     assert((nrc == 2) || (nrc == 1));
 #else
     assert(nrc == 1);
-   65858:       cmpl   $0x1,0x8(%r10)
-   6585d:       je     6587e <ggml_vec_dot_q8_0_q8_0+0xbc>
-   6585f:       lea    0x6e46a(%rip),%rcx        # d3cd0 <__PRETTY_FUNCTION__.32367>
-   65866:       mov    $0xd17,%edx
-   6586b:       lea    0x6dd5e(%rip),%rsi        # d35d0 <GGML_TENSOR_SIZE+0xf0>
-   65872:       lea    0x6ddf3(%rip),%rdi        # d366c <kvalues_iq4nl+0x1c>
-   65879:       callq  ff50 <__assert_fail@plt>
+   65866:       cmpl   $0x1,0x8(%r10)
+   6586b:       je     6588c <ggml_vec_dot_q8_0_q8_0+0xbc>
+   6586d:       lea    0x6e45c(%rip),%rcx        # d3cd0 <__PRETTY_FUNCTION__.32367>
+   65874:       mov    $0xd17,%edx
+   65879:       lea    0x6dd50(%rip),%rsi        # d35d0 <GGML_TENSOR_SIZE+0xf0>
+   65880:       lea    0x6dde5(%rip),%rdi        # d366c <kvalues_iq4nl+0x1c>
+   65887:       callq  ff50 <__assert_fail@plt>
     UNUSED(nrc);
     UNUSED(bx);
     UNUSED(by);
     UNUSED(bs);
 
     const block_q8_0 * restrict x = vx;
-   6587e:       mov    -0x170(%rbp),%rax
-   65885:       mov    %rax,-0x130(%rbp)
+   6588c:       mov    -0x170(%rbp),%rax
+   65893:       mov    %rax,-0x130(%rbp)
     const block_q8_0 * restrict y = vy;
-   6588c:       mov    -0x180(%rbp),%rax
-   65893:       mov    %rax,-0x128(%rbp)
+   6589a:       mov    -0x180(%rbp),%rax
+   658a1:       mov    %rax,-0x128(%rbp)
 
         return;
     }
 #endif
 
     int ib = 0;
-   6589a:       movl   $0x0,-0x14c(%rbp)
+   658a8:       movl   $0x0,-0x14c(%rbp)
     float sumf = 0;
-   658a4:       vxorps %xmm0,%xmm0,%xmm0
-   658a8:       vmovss %xmm0,-0x148(%rbp)
+   658b2:       vxorps %xmm0,%xmm0,%xmm0
+   658b6:       vmovss %xmm0,-0x148(%rbp)
 }
 
 extern __inline __m256 __attribute__((__gnu_inline__, __always_inline__, __artificial__))
 _mm256_setzero_ps (void)
 {
   return __extension__ (__m256){ 0.0, 0.0, 0.0, 0.0,
-   658b0:       vxorps %xmm0,%xmm0,%xmm0
+   658be:       vxorps %xmm0,%xmm0,%xmm0
     }
 
     sumf = vaddvq_f32(sumv0) + vaddvq_f32(sumv1);
-#elif defined(__AVX2__)  # 进入x86 架构的汇编
+#elif defined(__AVX2__)
     // Initialize accumulator with zeros
     __m256 acc = _mm256_setzero_ps();
-   658b4:       vmovaps %ymm0,-0x110(%rbp)
+   658c2:       vmovaps %ymm0,-0x110(%rbp)
 
     // Main loop
     for (; ib < nb; ++ib) {
-   658bc:       jmpq   65a07 <ggml_vec_dot_q8_0_q8_0+0x245>
+   658ca:       jmpq   65a15 <ggml_vec_dot_q8_0_q8_0+0x245>
         // Compute combined scale for the block
         const __m256 d = _mm256_set1_ps(GGML_FP16_TO_FP32(x[ib].d) * GGML_FP16_TO_FP32(y[ib].d));
-   658c1:       mov    -0x14c(%rbp),%eax
-   658c7:       cltq   
-   658c9:       imul   $0x22,%rax,%rdx
-   658cd:       mov    -0x130(%rbp),%rax
-   658d4:       add    %rdx,%rax
-   658d7:       movzwl (%rax),%eax
-   658da:       movzwl %ax,%eax
-   658dd:       mov    %eax,%edi
-   658df:       callq  5f603 <ggml_lookup_fp16_to_fp32>
-   658e4:       vmovss %xmm0,-0x184(%rbp)
-   658ec:       mov    -0x14c(%rbp),%eax
-   658f2:       cltq   
-   658f4:       imul   $0x22,%rax,%rdx
-   658f8:       mov    -0x128(%rbp),%rax
-   658ff:       add    %rdx,%rax
-   65902:       movzwl (%rax),%eax
-   65905:       movzwl %ax,%eax
-   65908:       mov    %eax,%edi
-   6590a:       callq  5f603 <ggml_lookup_fp16_to_fp32>
-   6590f:       vmulss -0x184(%rbp),%xmm0,%xmm0
-   65917:       vmovss %xmm0,-0x134(%rbp)
+   658cf:       mov    -0x14c(%rbp),%eax
+   658d5:       cltq   
+   658d7:       imul   $0x22,%rax,%rdx
+   658db:       mov    -0x130(%rbp),%rax
+   658e2:       add    %rdx,%rax
+   658e5:       movzwl (%rax),%eax
+   658e8:       movzwl %ax,%eax
+   658eb:       mov    %eax,%edi
+   658ed:       callq  5f611 <ggml_lookup_fp16_to_fp32>
+   658f2:       vmovss %xmm0,-0x184(%rbp)
+   658fa:       mov    -0x14c(%rbp),%eax
+   65900:       cltq   
+   65902:       imul   $0x22,%rax,%rdx
+   65906:       mov    -0x128(%rbp),%rax
+   6590d:       add    %rdx,%rax
+   65910:       movzwl (%rax),%eax
+   65913:       movzwl %ax,%eax
+   65916:       mov    %eax,%edi
+   65918:       callq  5f611 <ggml_lookup_fp16_to_fp32>
+   6591d:       vmulss -0x184(%rbp),%xmm0,%xmm0
+   65925:       vmovss %xmm0,-0x134(%rbp)
 
 /* Create a vector with all elements equal to A.  */
 extern __inline __m256 __attribute__((__gnu_inline__, __always_inline__, __artificial__))
 _mm256_set1_ps (float __A)
 {
   return __extension__ (__m256){ __A, __A, __A, __A,
-   6591f:       vbroadcastss -0x134(%rbp),%ymm0
-   65928:       vmovaps %ymm0,-0xf0(%rbp)
+   6592d:       vbroadcastss -0x134(%rbp),%ymm0
+   65936:       vmovaps %ymm0,-0xf0(%rbp)
         __m256i qx = _mm256_loadu_si256((const __m256i *)x[ib].qs);
-   65930:       mov    -0x14c(%rbp),%eax
-   65936:       cltq   
-   65938:       imul   $0x22,%rax,%rdx
-   6593c:       mov    -0x130(%rbp),%rax
-   65943:       add    %rdx,%rax
-   65946:       add    $0x2,%rax
-   6594a:       mov    %rax,-0x118(%rbp)
+   6593e:       mov    -0x14c(%rbp),%eax
+   65944:       cltq   
+   65946:       imul   $0x22,%rax,%rdx
+   6594a:       mov    -0x130(%rbp),%rax
+   65951:       add    %rdx,%rax
+   65954:       add    $0x2,%rax
+   65958:       mov    %rax,-0x118(%rbp)
   return *__P;
-   65951:       mov    -0x118(%rbp),%rax
-   65958:       vmovdqu64 (%rax),%ymm0
-   6595e:       vmovdqa64 %ymm0,-0xd0(%rbp)
+   6595f:       mov    -0x118(%rbp),%rax
+   65966:       vmovdqu64 (%rax),%ymm0
+   6596c:       vmovdqa64 %ymm0,-0xd0(%rbp)
         __m256i qy = _mm256_loadu_si256((const __m256i *)y[ib].qs);
-   65968:       mov    -0x14c(%rbp),%eax
-   6596e:       cltq   
-   65970:       imul   $0x22,%rax,%rdx
-   65974:       mov    -0x128(%rbp),%rax
-   6597b:       add    %rdx,%rax
-   6597e:       add    $0x2,%rax
-   65982:       mov    %rax,-0x120(%rbp)
-   65989:       mov    -0x120(%rbp),%rax
-   65990:       vmovdqu64 (%rax),%ymm0
-   65996:       vmovdqa64 %ymm0,-0xb0(%rbp)
+   65976:       mov    -0x14c(%rbp),%eax
+   6597c:       cltq   
+   6597e:       imul   $0x22,%rax,%rdx
+   65982:       mov    -0x128(%rbp),%rax
+   65989:       add    %rdx,%rax
+   6598c:       add    $0x2,%rax
+   65990:       mov    %rax,-0x120(%rbp)
+   65997:       mov    -0x120(%rbp),%rax
+   6599e:       vmovdqu64 (%rax),%ymm0
+   659a4:       vmovdqa64 %ymm0,-0xb0(%rbp)
 
         const __m256 q = mul_sum_i8_pairs_float(qx, qy);
-   659a0:       vmovdqa64 -0xb0(%rbp),%ymm1
-   659aa:       vmovdqa64 -0xd0(%rbp),%ymm0
-   659b4:       callq  60080 <mul_sum_i8_pairs_float>
-   659b9:       vmovaps %ymm0,-0x90(%rbp)
-   659c1:       vmovaps -0xf0(%rbp),%ymm0
-   659c9:       vmovaps %ymm0,-0x70(%rbp)
-   659ce:       vmovaps -0x90(%rbp),%ymm0
-   659d6:       vmovaps %ymm0,-0x50(%rbp)
-   659db:       vmovaps -0x110(%rbp),%ymm0
-   659e3:       vmovaps %ymm0,-0x30(%rbp)
+   659ae:       vmovdqa64 -0xb0(%rbp),%ymm1
+   659b8:       vmovdqa64 -0xd0(%rbp),%ymm0
+   659c2:       callq  6008e <mul_sum_i8_pairs_float>
+   659c7:       vmovaps %ymm0,-0x90(%rbp)
+   659cf:       vmovaps -0xf0(%rbp),%ymm0
+   659d7:       vmovaps %ymm0,-0x70(%rbp)
+   659dc:       vmovaps -0x90(%rbp),%ymm0
+   659e4:       vmovaps %ymm0,-0x50(%rbp)
+   659e9:       vmovaps -0x110(%rbp),%ymm0
+   659f1:       vmovaps %ymm0,-0x30(%rbp)
 
 extern __inline __m256
 __attribute__((__gnu_inline__, __always_inline__, __artificial__))
 _mm256_fmadd_ps (__m256 __A, __m256 __B, __m256 __C)
 {
   return (__m256)__builtin_ia32_vfmaddps256 ((__v8sf)__A, (__v8sf)__B,
-   659e8:       vmovaps -0x50(%rbp),%ymm1
-   659ed:       vmovaps -0x30(%rbp),%ymm0
-   659f2:       vfmadd231ps -0x70(%rbp),%ymm1,%ymm0
-   659f8:       nop
+   659f6:       vmovaps -0x50(%rbp),%ymm1
+   659fb:       vmovaps -0x30(%rbp),%ymm0
+   65a00:       vfmadd231ps -0x70(%rbp),%ymm1,%ymm0
+   65a06:       nop
 
         // Multiply q with scale and accumulate
         acc = _mm256_fmadd_ps( d, q, acc );
-   659f9:       vmovaps %ymm0,-0x110(%rbp)
+   65a07:       vmovaps %ymm0,-0x110(%rbp)
     for (; ib < nb; ++ib) {
-   65a01:       incl   -0x14c(%rbp)
-   65a07:       mov    -0x14c(%rbp),%eax
-   65a0d:       cmp    -0x138(%rbp),%eax
-   65a13:       jl     658c1 <ggml_vec_dot_q8_0_q8_0+0xff>
+   65a0f:       incl   -0x14c(%rbp)
+   65a15:       mov    -0x14c(%rbp),%eax
+   65a1b:       cmp    -0x138(%rbp),%eax
+   65a21:       jl     658cf <ggml_vec_dot_q8_0_q8_0+0xff>
     }
 
     sumf = hsum_float_8(acc);
-   65a19:       vmovaps -0x110(%rbp),%ymm0
-   65a21:       callq  5f654 <hsum_float_8>
-   65a26:       vmovd  %xmm0,%eax
-   65a2a:       mov    %eax,-0x148(%rbp)
+   65a27:       vmovaps -0x110(%rbp),%ymm0
+   65a2f:       callq  5f662 <hsum_float_8>
+   65a34:       vmovd  %xmm0,%eax
+   65a38:       mov    %eax,-0x148(%rbp)
         acc = __lasx_xvfmadd_s( d, q, acc );
     }
 
     sumf = hsum_float_8(acc);
 #endif
     for (; ib < nb; ++ib) {
-   65a30:       jmpq   65b3c <ggml_vec_dot_q8_0_q8_0+0x37a>
+   65a3e:       jmpq   65b4a <ggml_vec_dot_q8_0_q8_0+0x37a>
         int sumi = 0;
-   65a35:       movl   $0x0,-0x144(%rbp)
+   65a43:       movl   $0x0,-0x144(%rbp)
 
         for (int j = 0; j < qk; j++) {
-   65a3f:       movl   $0x0,-0x140(%rbp)
-   65a49:       jmp    65aa6 <ggml_vec_dot_q8_0_q8_0+0x2e4>
+   65a4d:       movl   $0x0,-0x140(%rbp)
+   65a57:       jmp    65ab4 <ggml_vec_dot_q8_0_q8_0+0x2e4>
             sumi += x[ib].qs[j]*y[ib].qs[j];
-   65a4b:       mov    -0x14c(%rbp),%eax
-   65a51:       cltq   
-   65a53:       imul   $0x22,%rax,%rdx
-   65a57:       mov    -0x130(%rbp),%rax
-   65a5e:       add    %rax,%rdx
-   65a61:       mov    -0x140(%rbp),%eax
-   65a67:       cltq   
-   65a69:       movzbl 0x2(%rdx,%rax,1),%eax
-   65a6e:       movsbl %al,%edx
-   65a71:       mov    -0x14c(%rbp),%eax
-   65a77:       cltq   
-   65a79:       imul   $0x22,%rax,%rcx
-   65a7d:       mov    -0x128(%rbp),%rax
-   65a84:       add    %rax,%rcx
-   65a87:       mov    -0x140(%rbp),%eax
-   65a8d:       cltq   
-   65a8f:       movzbl 0x2(%rcx,%rax,1),%eax
-   65a94:       movsbl %al,%eax
-   65a97:       imul   %edx,%eax
-   65a9a:       add    %eax,-0x144(%rbp)
+   65a59:       mov    -0x14c(%rbp),%eax
+   65a5f:       cltq   
+   65a61:       imul   $0x22,%rax,%rdx
+   65a65:       mov    -0x130(%rbp),%rax
+   65a6c:       add    %rax,%rdx
+   65a6f:       mov    -0x140(%rbp),%eax
+   65a75:       cltq   
+   65a77:       movzbl 0x2(%rdx,%rax,1),%eax
+   65a7c:       movsbl %al,%edx
+   65a7f:       mov    -0x14c(%rbp),%eax
+   65a85:       cltq   
+   65a87:       imul   $0x22,%rax,%rcx
+   65a8b:       mov    -0x128(%rbp),%rax
+   65a92:       add    %rax,%rcx
+   65a95:       mov    -0x140(%rbp),%eax
+   65a9b:       cltq   
+   65a9d:       movzbl 0x2(%rcx,%rax,1),%eax
+   65aa2:       movsbl %al,%eax
+   65aa5:       imul   %edx,%eax
+   65aa8:       add    %eax,-0x144(%rbp)
         for (int j = 0; j < qk; j++) {
-   65aa0:       incl   -0x140(%rbp)
-   65aa6:       mov    -0x140(%rbp),%eax
-   65aac:       cmp    -0x13c(%rbp),%eax
-   65ab2:       jl     65a4b <ggml_vec_dot_q8_0_q8_0+0x289>
+   65aae:       incl   -0x140(%rbp)
+   65ab4:       mov    -0x140(%rbp),%eax
+   65aba:       cmp    -0x13c(%rbp),%eax
+   65ac0:       jl     65a59 <ggml_vec_dot_q8_0_q8_0+0x289>
         }
 
         sumf += sumi*(GGML_FP16_TO_FP32(x[ib].d)*GGML_FP16_TO_FP32(y[ib].d));
-   65ab4:       vcvtsi2ssl -0x144(%rbp),%xmm3,%xmm3
-   65abc:       vmovss %xmm3,-0x184(%rbp)
-   65ac4:       mov    -0x14c(%rbp),%eax
-   65aca:       cltq   
-   65acc:       imul   $0x22,%rax,%rdx
-   65ad0:       mov    -0x130(%rbp),%rax
-   65ad7:       add    %rdx,%rax
-   65ada:       movzwl (%rax),%eax
-   65add:       movzwl %ax,%eax
-   65ae0:       mov    %eax,%edi
-   65ae2:       callq  5f603 <ggml_lookup_fp16_to_fp32>
-   65ae7:       vmovss %xmm0,-0x188(%rbp)
-   65aef:       mov    -0x14c(%rbp),%eax
-   65af5:       cltq   
-   65af7:       imul   $0x22,%rax,%rdx
-   65afb:       mov    -0x128(%rbp),%rax
-   65b02:       add    %rdx,%rax
-   65b05:       movzwl (%rax),%eax
-   65b08:       movzwl %ax,%eax
-   65b0b:       mov    %eax,%edi
-   65b0d:       callq  5f603 <ggml_lookup_fp16_to_fp32>
-   65b12:       vmulss -0x188(%rbp),%xmm0,%xmm0
-   65b1a:       vmulss -0x184(%rbp),%xmm0,%xmm0
-   65b22:       vmovss -0x148(%rbp),%xmm1
-   65b2a:       vaddss %xmm0,%xmm1,%xmm0
-   65b2e:       vmovss %xmm0,-0x148(%rbp)
+   65ac2:       vcvtsi2ssl -0x144(%rbp),%xmm3,%xmm3
+   65aca:       vmovss %xmm3,-0x184(%rbp)
+   65ad2:       mov    -0x14c(%rbp),%eax
+   65ad8:       cltq   
+   65ada:       imul   $0x22,%rax,%rdx
+   65ade:       mov    -0x130(%rbp),%rax
+   65ae5:       add    %rdx,%rax
+   65ae8:       movzwl (%rax),%eax
+   65aeb:       movzwl %ax,%eax
+   65aee:       mov    %eax,%edi
+   65af0:       callq  5f611 <ggml_lookup_fp16_to_fp32>
+   65af5:       vmovss %xmm0,-0x188(%rbp)
+   65afd:       mov    -0x14c(%rbp),%eax
+   65b03:       cltq   
+   65b05:       imul   $0x22,%rax,%rdx
+   65b09:       mov    -0x128(%rbp),%rax
+   65b10:       add    %rdx,%rax
+   65b13:       movzwl (%rax),%eax
+   65b16:       movzwl %ax,%eax
+   65b19:       mov    %eax,%edi
+   65b1b:       callq  5f611 <ggml_lookup_fp16_to_fp32>
+   65b20:       vmulss -0x188(%rbp),%xmm0,%xmm0
+   65b28:       vmulss -0x184(%rbp),%xmm0,%xmm0
+   65b30:       vmovss -0x148(%rbp),%xmm1
+   65b38:       vaddss %xmm0,%xmm1,%xmm0
+   65b3c:       vmovss %xmm0,-0x148(%rbp)
     for (; ib < nb; ++ib) {
-   65b36:       incl   -0x14c(%rbp)
-   65b3c:       mov    -0x14c(%rbp),%eax
-   65b42:       cmp    -0x138(%rbp),%eax
-   65b48:       jl     65a35 <ggml_vec_dot_q8_0_q8_0+0x273>
+   65b44:       incl   -0x14c(%rbp)
+   65b4a:       mov    -0x14c(%rbp),%eax
+   65b50:       cmp    -0x138(%rbp),%eax
+   65b56:       jl     65a43 <ggml_vec_dot_q8_0_q8_0+0x273>
     }
 
     *s = sumf;
-   65b4e:       mov    -0x160(%rbp),%rax
-   65b55:       vmovss -0x148(%rbp),%xmm0
-   65b5d:       vmovss %xmm0,(%rax)
+   65b5c:       mov    -0x160(%rbp),%rax
+   65b63:       vmovss -0x148(%rbp),%xmm0
+   65b6b:       vmovss %xmm0,(%rax)
 }
-   65b61:       nop
-   65b62:       add    $0x188,%rsp
-   65b69:       pop    %r10
-   65b6b:       pop    %rbp
-   65b6c:       lea    -0x8(%r10),%rsp
-   65b70:       retq   
+   65b6f:       nop
+   65b70:       add    $0x188,%rsp
+   65b77:       pop    %r10
+   65b79:       pop    %rbp
+   65b7a:       lea    -0x8(%r10),%rsp
+   65b7e:       retq   
 ```
 ##
 ```asm
