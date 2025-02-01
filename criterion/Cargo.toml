@@ -11,7 +11,8 @@ rand = "0.8"
 # name = "fmadd_ps"
 # harness = false
 
-[lib]
+# [lib]
+# crate-type = ["cdylib"]
 # bench = false
 [profile.bench]
 opt-level = 3

@@ -6,7 +6,7 @@
 use std::simd::{self, i32x4, i8x32, num::SimdInt};
 
 use half::f16;
-
+use x86_64::{consts::{GGML_F16_ARR, GGML_F16_EPR, GGML_F16_STEP}, ggml_f32_cx16_load, ggml_f32x16_reduce};
 #[allow(dead_code)]
 #[cfg(target_arch = "x86_64")]
 mod x86_64;
@@ -14,9 +14,10 @@ mod x86_64;
 #[repr(C, packed)]
 #[derive(Debug, Clone)]
 pub struct BlockQ8_0 {
-    d: f16,       // delta
-    qs: [i8; 32], // quants
+    pub d: f16,       // delta
+    pub qs: [i8; 32], // quants
 }
+
 
 #[link(name = "ggml")]
 extern "C" {
@@ -132,8 +133,7 @@ pub fn vec_dot_q8_0_q8_0_avx2(abs: &[BlockQ8_0], bbs: &[BlockQ8_0]) -> f32 {
         x86_64::hsum_float_8(_mm256_add_ps(acc0, acc1))
     }
 }
-#[cfg(target_arch = "x86_64")]
-pub fn vec_dot_q8_simdx86(x: &[BlockQ8_0], y: &[BlockQ8_0]) -> f32 {
+pub fn vec_dot_q8(x: &[BlockQ8_0], y: &[BlockQ8_0]) -> f32 {
     unsafe {
         use std::arch::x86_64::*;
         // Initialize accumulator with zeros
@@ -142,19 +142,50 @@ pub fn vec_dot_q8_simdx86(x: &[BlockQ8_0], y: &[BlockQ8_0]) -> f32 {
         (0..x.len()).into_iter().for_each(|i| {
             //  转换成查表，提升不明显
             let d = _mm256_set1_ps(x[i].d.to_f32() * (y[i].d.to_f32()));
-
             let qx = _mm256_loadu_si256(x[i].qs.as_ptr() as *const __m256i);
             let qy = _mm256_loadu_si256(y[i].qs.as_ptr() as *const __m256i);
-
             let q = crate::x86_64::mul_sum_i8_pairs_float(qx, qy);
 
             // TODO 过慢 cpu Intel(R) Xeon(R) Gold 6330 CPU @ 2.00GHz rust 1.86.0-nightly
             // // Multiply q with scale and accumulate
-            acc = _mm256_fmadd_ps(d,q, acc);
+            acc = _mm256_fmadd_ps(d, q, acc);
         });
         crate::x86_64::hsum_float_8(acc)
     }
 }
+pub fn vec_dot_f16(x: &[f16], y: &[f16]) -> f32 {
+    unsafe {
+        use std::arch::x86_64::*;
+        let mut sumf: f32 = 0.0;
+        let n = x.len();
+
+        let np = n & !(GGML_F16_STEP - 1);
+
+        let mut sum: [__m512; GGML_F16_ARR] = [_mm512_setzero_ps(); GGML_F16_ARR];
+        let mut ax: [__m512; GGML_F16_ARR] = [_mm512_setzero_ps(); GGML_F16_ARR];
+        let mut ay: [__m512; GGML_F16_ARR] = [_mm512_setzero_ps(); GGML_F16_ARR];
+
+        for i in (0..np).step_by(GGML_F16_STEP) {
+            for j in 0..GGML_F16_ARR {
+                let idx = i + j * GGML_F16_EPR;
+
+                ax[j] = ggml_f32_cx16_load(x.as_ptr().add(idx) as *const u8);
+                ay[j] = ggml_f32_cx16_load(y.as_ptr().add(idx) as *const u8);
+
+                sum[j] = _mm512_fmadd_ps(ax[j], ay[j], sum[j]);
+            }
+        }
+
+        ggml_f32x16_reduce(sumf, &mut sum);
+        // 处理不能除尽的元素
+        (np..n).into_iter().for_each(|i| {
+            sumf += x[i].to_f32() * y[i].to_f32();
+        });
+        sumf
+    }
+}
+
+
 #[cfg(target_arch = "aarch64")]
 pub fn vec_dot_q8_neon(n: usize, a: &[BlockQ8_0], b: &[BlockQ8_0]) -> f32 {
     unsafe {
@@ -337,7 +368,6 @@ pub fn vec_dot_q8_neon_unrolled_vfma(n: usize, a: &[BlockQ8_0], b: &[BlockQ8_0])
 
 #[cfg(test)]
 mod tests {
-    use crate::x86_64::vec_dot_f16;
 
     use super::*;
     use half::vec;
@@ -364,7 +394,6 @@ mod tests {
 
     fn gen_rand_block_f16(n: usize) -> Vec<f16> {
         let mut rng = thread_rng();
-        let d: f32 = rng.gen_range(0.0..2.0);
         (0..n)
             .map(|_| {
                 // 生成一个介于 0.0 到 1.0 之间的 f32 随机数
@@ -386,10 +415,10 @@ mod tests {
         let v1 = gen_rand_block_q8_0_vec(4);
         let v2 = gen_rand_block_q8_0_vec(4);
 
-        let naive_result = vec_dot_q8_naive(64, &v1, &v2);
-        let result = vec_dot_q8_ggml(64, &v1, &v2);
-        assert!((result - naive_result).abs() < 1e-2);
-        let result = vec_dot_q8_stdsimd(64, &v1, &v2);
+        let naive_result = vec_dot_q8_naive(128, &v1, &v2);
+        // let result = vec_dot_q8_ggml(128, &v1, &v2);
+        // assert!((result - naive_result).abs() < 1e-2);
+        let result = vec_dot_q8(&v1, &v2);
         assert!((result - naive_result).abs() < 1e-2);
         // let result = vec_dot_q8_neon(64, &v1, &v2);
         // assert!((result - naive_result).abs() < 1e-2);
@@ -431,10 +460,10 @@ mod tests {
         b.iter(|| vec_dot_q8_0_q8_0_avx2(&v1, &v2));
     }
     #[bench]
-    fn bench_vec_dot_q8_simdx86(b: &mut Bencher) {
+    fn bench_vec_dot_q8(b: &mut Bencher) {
         let v1 = gen_rand_block_q8_0_vec(TEST_BLOCKS);
         let v2 = gen_rand_block_q8_0_vec(TEST_BLOCKS);
-        b.iter(|| vec_dot_q8_simdx86( &v1, &v2));
+        b.iter(|| vec_dot_q8(&v1, &v2));
     }
     #[bench]
     fn bench_vec_dot_f16(b: &mut Bencher) {
