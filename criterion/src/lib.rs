@@ -19,7 +19,7 @@ pub struct BlockQ8_0 {
 }
 
 #[link(name = "ggml")]
-unsafe extern "C" {
+extern "C" {
     fn ggml_vec_dot_q8_0_q8_0(
         n: i32,               // number of elements
         s: *mut f32,          // result
@@ -30,16 +30,6 @@ unsafe extern "C" {
         by: usize,            // not used?
         nrc: i32,             // always 1?
     );
-    // unsafe fn ggml_vec_dot_f16(
-    //     n: i32,
-    //     s: *mut f32, // restrict 指针
-    //     bs: usize,
-    //     x: *const f16, // restrict 指针
-    //     bx: usize,
-    //     y: *const f16, // restrict 指针
-    //     by: usize,
-    //     nrc: i32,
-    // ) -> f32;
 }
 
 pub fn vec_dot_q8_ggml(n: usize, x: &[BlockQ8_0], y: &[BlockQ8_0]) -> f32 {
@@ -144,7 +134,6 @@ pub fn vec_dot_q8_0_q8_0_avx2(abs: &[BlockQ8_0], bbs: &[BlockQ8_0]) -> f32 {
 }
 #[cfg(target_arch = "x86_64")]
 pub fn vec_dot_q8_simdx86(x: &[BlockQ8_0], y: &[BlockQ8_0]) -> f32 {
-    // if is_x86_feature_detected!("avx2") {
     unsafe {
         use std::arch::x86_64::*;
         // Initialize accumulator with zeros
@@ -157,11 +146,11 @@ pub fn vec_dot_q8_simdx86(x: &[BlockQ8_0], y: &[BlockQ8_0]) -> f32 {
             let qx = _mm256_loadu_si256(x[i].qs.as_ptr() as *const __m256i);
             let qy = _mm256_loadu_si256(y[i].qs.as_ptr() as *const __m256i);
 
-            // let q = crate::x86_64::mul_sum_i8_pairs_float(qx, qy);
+            let q = crate::x86_64::mul_sum_i8_pairs_float(qx, qy);
 
             // TODO 过慢 cpu Intel(R) Xeon(R) Gold 6330 CPU @ 2.00GHz rust 1.86.0-nightly
             // // Multiply q with scale and accumulate
-            acc = _mm256_fmadd_ps(d,d, acc);
+            acc = _mm256_fmadd_ps(d,q, acc);
         });
         crate::x86_64::hsum_float_8(acc)
     }
@@ -393,12 +382,19 @@ mod tests {
         v
     }
     #[test]
-    fn test_vec_dot_q8_simdx86() {
+    fn test_vec_dot_q8() {
         let v1 = gen_rand_block_q8_0_vec(4);
         let v2 = gen_rand_block_q8_0_vec(4);
+
         let naive_result = vec_dot_q8_naive(64, &v1, &v2);
-        let result = vec_dot_q8_simdx86( &v1, &v2);
+        let result = vec_dot_q8_ggml(64, &v1, &v2);
         assert!((result - naive_result).abs() < 1e-2);
+        let result = vec_dot_q8_stdsimd(64, &v1, &v2);
+        assert!((result - naive_result).abs() < 1e-2);
+        // let result = vec_dot_q8_neon(64, &v1, &v2);
+        // assert!((result - naive_result).abs() < 1e-2);
+        // let result = vec_dot_q8_neon_unrolled(64, &v1, &v2);
+        // assert!((result - naive_result).abs() < 1e-2);
     }
 
     #[test]
