@@ -30,16 +30,16 @@ unsafe extern "C" {
         by: usize,            // not used?
         nrc: i32,             // always 1?
     );
-    unsafe fn ggml_vec_dot_f16(
-        n: i32,
-        s: *mut f32, // restrict 指针
-        bs: usize,
-        x: *const f16, // restrict 指针
-        bx: usize,
-        y: *const f16, // restrict 指针
-        by: usize,
-        nrc: i32,
-    ) -> f32;
+    // unsafe fn ggml_vec_dot_f16(
+    //     n: i32,
+    //     s: *mut f32, // restrict 指针
+    //     bs: usize,
+    //     x: *const f16, // restrict 指针
+    //     bx: usize,
+    //     y: *const f16, // restrict 指针
+    //     by: usize,
+    //     nrc: i32,
+    // ) -> f32;
 }
 
 pub fn vec_dot_q8_ggml(n: usize, x: &[BlockQ8_0], y: &[BlockQ8_0]) -> f32 {
@@ -58,22 +58,7 @@ pub fn vec_dot_q8_ggml(n: usize, x: &[BlockQ8_0], y: &[BlockQ8_0]) -> f32 {
     }
     result
 }
-pub fn vec_dot_f16_ggml(n: usize, x: &[f16], y: &[f16]) -> f32 {
-    let mut result: f32 = 0.0;
-    unsafe {
-        ggml_vec_dot_f16(
-            n as i32,
-            &mut result as *mut f32,
-            0,
-            x.as_ptr(),
-            0,
-            y.as_ptr(),
-            0,
-            1,
-        );
-    }
-    result
-}
+
 
 pub fn vec_dot_q8_naive(n: usize, x: &[BlockQ8_0], y: &[BlockQ8_0]) -> f32 {
     let mut result: f32 = 0.0;
@@ -158,26 +143,25 @@ pub fn vec_dot_q8_0_q8_0_avx2(abs: &[BlockQ8_0], bbs: &[BlockQ8_0]) -> f32 {
     }
 }
 #[cfg(target_arch = "x86_64")]
-pub fn vec_dot_q8_simdx86(n: usize, x: &[BlockQ8_0], y: &[BlockQ8_0]) -> f32 {
+pub fn vec_dot_q8_simdx86(x: &[BlockQ8_0], y: &[BlockQ8_0]) -> f32 {
     // if is_x86_feature_detected!("avx2") {
     unsafe {
         use std::arch::x86_64::*;
         // Initialize accumulator with zeros
         let mut acc = _mm256_setzero_ps();
         // Main loop
-        (0..n / 32).into_iter().for_each(|i| {
+        (0..x.len()).into_iter().for_each(|i| {
             //  转换成查表，提升不明显
             let d = _mm256_set1_ps(x[i].d.to_f32() * (y[i].d.to_f32()));
-            // let d = x86_64::_mm256_setzero_ps();
 
             let qx = _mm256_loadu_si256(x[i].qs.as_ptr() as *const __m256i);
             let qy = _mm256_loadu_si256(y[i].qs.as_ptr() as *const __m256i);
 
-            let q = crate::x86_64::mul_sum_i8_pairs_float(qx, qy);
+            // let q = crate::x86_64::mul_sum_i8_pairs_float(qx, qy);
 
             // TODO 过慢 cpu Intel(R) Xeon(R) Gold 6330 CPU @ 2.00GHz rust 1.86.0-nightly
             // // Multiply q with scale and accumulate
-            acc = _mm256_fmadd_ps(d, q, acc);
+            acc = _mm256_fmadd_ps(d,d, acc);
         });
         crate::x86_64::hsum_float_8(acc)
     }
@@ -409,28 +393,11 @@ mod tests {
         v
     }
     #[test]
-    fn test_vec_dot_f16() {
-        let count = TEST_BLOCKS * 32;
-        let v1 = gen_rand_block_f16(count);
-        let v2 = gen_rand_block_f16(count);
-        let naive_result = vec_dot_f16_ggml(count, &v1, &v2);
-        let result = vec_dot_f16(&v1, &v2);
-        assert!((result - naive_result).abs() < 1e-2);
-    }
-    // #[test]
-    // fn test_vec_dot_q8_0_q8_0_avx2() {
-    //     let v1 = gen_rand_block_q8_0_vec(4);
-    //     let v2 = gen_rand_block_q8_0_vec(4);
-    //     let naive_result = vec_dot_q8_naive(64, &v1, &v2);
-    //     let result = vec_dot_q8_0_q8_0_avx2( &v1, &v2);
-    //     assert!((result - naive_result).abs() < 1e-2);
-    // }
-    #[test]
     fn test_vec_dot_q8_simdx86() {
         let v1 = gen_rand_block_q8_0_vec(4);
         let v2 = gen_rand_block_q8_0_vec(4);
         let naive_result = vec_dot_q8_naive(64, &v1, &v2);
-        let result = vec_dot_q8_simdx86(64, &v1, &v2);
+        let result = vec_dot_q8_simdx86( &v1, &v2);
         assert!((result - naive_result).abs() < 1e-2);
     }
 
@@ -471,14 +438,7 @@ mod tests {
     fn bench_vec_dot_q8_simdx86(b: &mut Bencher) {
         let v1 = gen_rand_block_q8_0_vec(TEST_BLOCKS);
         let v2 = gen_rand_block_q8_0_vec(TEST_BLOCKS);
-        b.iter(|| vec_dot_q8_simdx86(TEST_BLOCKS, &v1, &v2));
-    }
-    #[bench]
-    fn bench_vec_dot_f16_ggml(b: &mut Bencher) {
-        let count = TEST_BLOCKS * 32;
-        let v1 = gen_rand_block_f16(count);
-        let v2 = gen_rand_block_f16(count);
-        b.iter(|| vec_dot_f16_ggml(count, &v1, &v2));
+        b.iter(|| vec_dot_q8_simdx86( &v1, &v2));
     }
     #[bench]
     fn bench_vec_dot_f16(b: &mut Bencher) {
