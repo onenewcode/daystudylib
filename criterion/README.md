@@ -1,3 +1,5 @@
+# TODO
+需要手动启用指定的 target-feature
 # 操作
 需要导入共享库 
 >export LD_LIBRARY_PATH=/home/ztf/llama.cpp/build/bin:$LD_LIBRARY_PATH

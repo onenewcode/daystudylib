@@ -95,6 +95,8 @@ pub fn vec_dot_q8_stdsimd(n: usize, x: &[BlockQ8_0], y: &[BlockQ8_0]) -> f32 {
 pub fn vec_dot_q8_0_q8_0_avx2(abs: &[BlockQ8_0], bbs: &[BlockQ8_0]) -> f32 {
     use std::arch::x86_64::*;
 
+    use crate::x86_64::*;
+
     debug_assert_eq!(abs.len(), bbs.len());
 
     unsafe {
@@ -111,8 +113,8 @@ pub fn vec_dot_q8_0_q8_0_avx2(abs: &[BlockQ8_0], bbs: &[BlockQ8_0]) -> f32 {
             let qa1 = _mm256_loadu_si256(abs1.qs.as_ptr() as *const __m256i);
             let qb1 = _mm256_loadu_si256(bbs1.qs.as_ptr() as *const __m256i);
 
-            let q0 = x86_64::mul_sum_i8_pairs_float(qa0, qb0);
-            let q1 = x86_64::mul_sum_i8_pairs_float(qa1, qb1);
+            let q0 = mul_sum_i8_pairs_float(qa0, qb0);
+            let q1 = mul_sum_i8_pairs_float(qa1, qb1);
 
             acc0 = _mm256_fmadd_ps(d0, q0, acc0);
             acc1 = _mm256_fmadd_ps(d1, q1, acc1);
@@ -127,12 +129,12 @@ pub fn vec_dot_q8_0_q8_0_avx2(abs: &[BlockQ8_0], bbs: &[BlockQ8_0]) -> f32 {
             let qa = _mm256_loadu_si256(a.qs.as_ptr() as *const __m256i);
             let qb = _mm256_loadu_si256(b.qs.as_ptr() as *const __m256i);
 
-            let q = x86_64::mul_sum_i8_pairs_float(qa, qb);
+            let q = mul_sum_i8_pairs_float(qa, qb);
 
             acc0 = _mm256_fmadd_ps(d, q, acc0);
         }
 
-        x86_64::hsum_float_8(_mm256_add_ps(acc0, acc1))
+        hsum_float_8(_mm256_add_ps(acc0, acc1))
     }
 }
 pub fn vec_dot_q8(x: &[BlockQ8_0], y: &[BlockQ8_0]) -> f32 {
@@ -419,8 +421,8 @@ mod tests {
         assert!((result - naive_result).abs() < 1e-2);
         let result = vec_dot_q8(&v1, &v2);
         assert!((result - naive_result).abs() < 1e-2);
-        // let result = vec_dot_q8_neon(64, &v1, &v2);
-        // assert!((result - naive_result).abs() < 1e-2);
+        let result = vec_dot_q8_0_q8_0_avx2( &v1, &v2);
+        assert!((result - naive_result).abs() < 1e-2);
         // let result = vec_dot_q8_neon_unrolled(64, &v1, &v2);
         // assert!((result - naive_result).abs() < 1e-2);
     }
