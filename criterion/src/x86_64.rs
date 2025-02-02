@@ -8,7 +8,7 @@ use crate::BlockQ8_0;
 // 当目标支持 AVX2 时设置这些常量
 // #[cfg(target_feature = "avx512f")]
 pub mod consts {
-    pub  const GGML_F16_STEP: usize = 64;
+    pub const GGML_F16_STEP: usize = 64;
     pub const GGML_F16_EPR: usize = 16;
     pub const GGML_F32_STEP: usize = 64;
     pub const GGML_F32_EPR: usize = 16;
@@ -64,7 +64,7 @@ pub unsafe fn hsum_float_8(x: __m256) -> f32 {
     _mm_cvtss_f32(res)
 }
 #[target_feature(enable = "avx512f")]
-pub unsafe  fn ggml_f32x16_reduce(mut res: f32, x: &mut [__m512; GGML_F32_ARR]) {
+pub unsafe fn ggml_f32x16_reduce(mut res: f32, x: &mut [__m512; GGML_F32_ARR]) {
     let mut offset = GGML_F32_ARR >> 1;
     // 第一轮归约
     for i in 0..offset {
