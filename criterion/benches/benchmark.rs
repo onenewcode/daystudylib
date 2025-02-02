@@ -33,7 +33,7 @@ pub fn tensor_benchmarks(c: &mut Criterion) {
         })
     });
     #[cfg(target_os = "linux")]
-    c.bench_function("native q8", |b| {
+    c.bench_function("crabml q8", |b| {
         b.iter(|| {
             vec_dot_q8_ggml(TEST_ELEMS, black_box(&v1), black_box(&v2));
         })
