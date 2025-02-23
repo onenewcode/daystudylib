@@ -21,37 +21,37 @@ pub struct BlockQ8_0 {
     pub d: f16,       // delta
     pub qs: [i8; 32], // quants
 }
-
-// #[link(name = "ggml")]
-// extern "C" {
-//     fn ggml_vec_dot_q8_0_q8_0(
-//         n: i32,               // number of elements
-//         s: *mut f32,          // result
-//         bs: usize,            // not used?
-//         vx: *const BlockQ8_0, // binary of quantized vec x
-//         bx: usize,            // not used?
-//         vy: *const BlockQ8_0, // binary of quantized vec y
-//         by: usize,            // not used?
-//         nrc: i32,             // always 1?
-//     );
-// }
-
-// pub fn vec_dot_q8_ggml(n: usize, x: &[BlockQ8_0], y: &[BlockQ8_0]) -> f32 {
-//     let mut result: f32 = 0.0;
-//     unsafe {
-//         ggml_vec_dot_q8_0_q8_0(
-//             n as i32,
-//             &mut result as *mut f32,
-//             0,
-//             x.as_ptr(),
-//             0,
-//             y.as_ptr(),
-//             0,
-//             1,
-//         );
-//     }
-//     result
-// }
+#[cfg(target_os = "linux")]
+#[link(name = "ggml")]
+extern "C" {
+    fn ggml_vec_dot_q8_0_q8_0(
+        n: i32,               // number of elements
+        s: *mut f32,          // result
+        bs: usize,            // not used?
+        vx: *const BlockQ8_0, // binary of quantized vec x
+        bx: usize,            // not used?
+        vy: *const BlockQ8_0, // binary of quantized vec y
+        by: usize,            // not used?
+        nrc: i32,             // always 1?
+    );
+}
+#[cfg(target_os = "linux")]
+pub fn vec_dot_q8_ggml(n: usize, x: &[BlockQ8_0], y: &[BlockQ8_0]) -> f32 {
+    let mut result: f32 = 0.0;
+    unsafe {
+        ggml_vec_dot_q8_0_q8_0(
+            n as i32,
+            &mut result as *mut f32,
+            0,
+            x.as_ptr(),
+            0,
+            y.as_ptr(),
+            0,
+            1,
+        );
+    }
+    result
+}
 
 pub fn vec_dot_q8_naive(n: usize, x: &[BlockQ8_0], y: &[BlockQ8_0]) -> f32 {
     let mut result: f32 = 0.0;
@@ -417,11 +417,11 @@ mod tests {
         let naive_result = vec_dot_q8_naive(128, &v1, &v2);
         // let result = vec_dot_q8_ggml(128, &v1, &v2);
         // assert!((result - naive_result).abs() < 1e-2);
-        let result = vec_dot_q8_stdsimd(128,&v1, &v2);
+        let result = vec_dot_q8_stdsimd(128, &v1, &v2);
         assert!((result - naive_result).abs() < 1e-2);
         let result = vec_dot_q8(&v1, &v2);
         assert!((result - naive_result).abs() < 1e-2);
-        let result = vec_dot_q8_0_q8_0_avx2( &v1, &v2);
+        let result = vec_dot_q8_0_q8_0_avx2(&v1, &v2);
         assert!((result - naive_result).abs() < 1e-2);
         // let result = vec_dot_q8_neon_unrolled(64, &v1, &v2);
         // assert!((result - naive_result).abs() < 1e-2);

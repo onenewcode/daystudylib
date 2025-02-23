@@ -15,6 +15,8 @@
 
 > objdump -d -S --disassemble=ggml_vec_dot_q8_0_q8_0 --no-show-raw-insn ./libggml-cpu.so
 
+开启平台相关特性
+>cmake -B build -DGGML_NATIVE=OFF -DGGML_NATIVE_DEFAULT=ON
 >cmake -B build -DCMAKE_BUILD_TYPE=Debug -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ && cmake --build build 
 >cmake -B build -DCMAKE_BUILD_TYPE=Debug  && cmake --build build 
 ```asm
