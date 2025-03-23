@@ -4,6 +4,9 @@ py
 >dora run dataflow.yml
 
 rust要提前编译不是很方便
+提前运行，但是可能会导致写同时写单个文件导致冲突，可能需要添加run.rs脚本
+> dora build .\dataflow.yml
+
 >
 # conda 
 **查看环境**：
