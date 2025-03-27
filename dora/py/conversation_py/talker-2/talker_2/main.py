@@ -14,6 +14,7 @@ def main():
             metadata: {event["metadata"]}"""
             )
             node.send_output("speech", pa.array(["Hello World"]))
+        
 
 
 if __name__ == "__main__":

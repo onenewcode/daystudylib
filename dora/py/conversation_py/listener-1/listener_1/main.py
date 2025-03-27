@@ -9,7 +9,8 @@ def main():
             # 取出事件中的 vslue 值，转为 py 类型 ,如何通过类型或者字符串？
             message = event["value"][0].as_py()
             print(f"""I heard {message} from {event["id"]}""")
-
+        if event["type"] == "STOP":
+            print(f"""I send stop""")
 
 if __name__ == "__main__":
     main()
